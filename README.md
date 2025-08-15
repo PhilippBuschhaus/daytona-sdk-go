@@ -22,35 +22,17 @@ The Daytona Go SDK provides a Go interface for interacting with the Daytona API,
 go get github.com/PhilippBuschhaus/daytona-sdk-go
 ```
 
-The SDK includes the Daytona API client bundled within the `apiclient` directory, so no additional dependencies are needed.
-
-### Updating the API Client
-
-To update the bundled API client to the latest version from the Daytona repository:
-
-```bash
-./scripts/update-apiclient.sh
-```
-
-This script will fetch the latest API client from GitHub and update the local copy.
 
 ## Configuration
 
 The SDK automatically loads environment variables from `.env` files using [godotenv](https://github.com/joho/godotenv). 
 
-Create a `.env` file in your project root:
+Create a `.env` file in your project root or add into the configuration struct:
 
 ```bash
 DAYTONA_API_KEY=your_api_key_here
 DAYTONA_API_URL=https://app.daytona.io/api  # Optional, defaults to this URL
 ```
-
-The SDK will automatically:
-- Load `.env` from the current directory
-- Load `../.env` from the parent directory (useful for examples)
-- Use system environment variables if no `.env` file exists
-
-No need to manually source the `.env` file or use `export` commands!
 
 ## Quick Start
 
@@ -76,12 +58,7 @@ func main() {
     
     // Create a sandbox
     sandbox, err := client.CreateSandbox(ctx, &daytona.CreateSandboxRequest{
-        Target: daytona.StringPtr("eu"), // Required: deployment region (eu, us, etc.)
-        
-        // All other fields are optional and have sensible defaults:
-        // User:     daytona.StringPtr("daytona"),  // Defaults to account default
-        // Snapshot: daytona.StringPtr("..."),      // Defaults to latest
-        // Public:   daytona.BoolPtr(false),        // Defaults to false
+        Target: daytona.StringPtr("eu"), 
     })
     if err != nil {
         log.Fatal(err)
@@ -234,9 +211,17 @@ This SDK is under active development. Current limitations:
 
 Contributions are welcome! Please feel free to submit issues and pull requests.
 
-## License
+The SDK includes the Daytona API client bundled within the `apiclient` directory
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+### Updating the API Client
+
+To update the bundled API client to the latest version from the Daytona repository:
+
+```bash
+./scripts/update-apiclient.sh
+```
+
+This script will fetch the latest API client from GitHub and update the local copy.
 
 ## Disclaimer
 
