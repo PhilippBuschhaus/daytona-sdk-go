@@ -104,31 +104,45 @@ go run examples/comprehensive/main.go
 
 ## Declarative Image Builder
 
-The SDK includes a powerful declarative builder for creating custom Docker images, similar to the TypeScript SDK:
+Build custom Docker images programmatically using method chaining:
 
-### Basic Usage
+### Dynamic Image Building
 
 ```go
-// Use preset builders
-image := daytona.PythonDataScience("3.11")  // Includes numpy, pandas, scikit-learn, etc.
-
-// Or build custom images with method chaining
-image := daytona.DebianSlim("3.11").
-    AptInstall([]string{"postgresql-client"}).
-    PipInstall([]string{"fastapi", "uvicorn", "sqlalchemy"}).
-    EnvVars(                           // Set multiple env vars at once
-        "APP_ENV", "production",
-        "PORT", "8000",
-        "WORKERS", "4",
+// Build a custom image with your dependencies
+image := daytona.DebianSlim("3.12").
+    PipInstall([]string{"pytest", "pytest-cov", "mypy", "ruff", "black", "gunicorn"}).
+    RunCommands(
+        "apt-get update && apt-get install -y git curl",
+        "mkdir -p /home/daytona/project",
     ).
-    Workdir("/app").
-    Expose(8000)
+    Workdir("/home/daytona/project").
+    EnvMap(map[string]string{
+        "ENV_VAR": "My Environment Variable",
+    }).
+    File("/home/daytona/.config/app/config.json", `{"apiUrl": "https://api.example.com", "debug": true}`)
 
-// Create sandbox with the custom image
+// Create sandbox with custom image
 sandbox, err := client.CreateSandbox(ctx, &daytona.CreateSandboxRequest{
     Target: daytona.StringPtr("eu"),
     DockerfileContent: daytona.StringPtr(image.Build()),
 })
+```
+
+### Pre-built Images for Common Use Cases
+
+```go
+// Data Science environment
+dsImage := daytona.PythonDataScience("3.11")
+
+// Web development environment
+webImage := daytona.PythonWeb("3.11")
+
+// Node.js environment
+nodeImage := daytona.NodeJS("20")
+
+// Go development environment
+goImage := daytona.Go("1.21")
 ```
 
 ### Available Builders
@@ -154,6 +168,8 @@ All methods return the Image instance for chaining:
 - `EnvMap(map[string]string)` - Set environment variables from a map
 - `Workdir(path)` - Set working directory
 - `Copy(src, dest)` - Copy files into image
+- `Add(src, dest)` - Add files or URLs to image
+- `File(path, content)` - Create a file with content in the image
 - `Expose(port)` - Expose container ports
 - `Label(key, value)` - Add metadata labels
 - `User(username)` - Set user for commands
