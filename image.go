@@ -166,23 +166,37 @@ func (i *Image) Add(src, dest string) *Image {
 	return i
 }
 
-// File creates a file with the specified content in the image
 func (i *Image) File(path, content string) *Image {
-	// Create parent directory if needed
+	// Clean path
+	if !filepath.IsAbs(path) {
+		path = "/" + path
+	}
+	path = filepath.Clean(path)
+
+	// Create directory
 	dir := filepath.Dir(path)
-	if dir != "" && dir != "/" && dir != "." {
+	if dir != "/" && dir != "." {
 		i.dockerfile = append(i.dockerfile, fmt.Sprintf("RUN mkdir -p %s", dir))
 	}
 
-	// Generate a safe delimiter
+	// ALWAYS use cat with heredoc for maximum reliability
+	// Find unique delimiter
 	delimiter := "EOF"
+	counter := 0
 	for strings.Contains(content, delimiter) {
-		delimiter = delimiter + "_"
+		counter++
+		delimiter = fmt.Sprintf("EOF_%d", counter)
 	}
 
-	// Add COPY command with heredoc
-	i.dockerfile = append(i.dockerfile, fmt.Sprintf("COPY <<'%s' %s\n%s\n%s",
-		delimiter, path, content, delimiter))
+	// Add file using cat with heredoc (handles ALL escaping automatically)
+	i.dockerfile = append(i.dockerfile,
+		fmt.Sprintf("RUN cat > %s << '%s'\n%s\n%s",
+			path, delimiter, content, delimiter))
+
+	// Make executable if script
+	if strings.HasSuffix(path, ".py") || strings.HasSuffix(path, ".sh") {
+		i.dockerfile = append(i.dockerfile, fmt.Sprintf("RUN chmod +x %s", path))
+	}
 
 	return i
 }
