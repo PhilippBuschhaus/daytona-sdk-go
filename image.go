@@ -165,7 +165,6 @@ func (i *Image) Add(src, dest string) *Image {
 	i.dockerfile = append(i.dockerfile, fmt.Sprintf("ADD %s %s", src, dest))
 	return i
 }
-
 func (i *Image) File(path, content string) *Image {
 	// Clean path
 	if !filepath.IsAbs(path) {
@@ -179,23 +178,15 @@ func (i *Image) File(path, content string) *Image {
 		i.dockerfile = append(i.dockerfile, fmt.Sprintf("RUN mkdir -p %s", dir))
 	}
 
-	// Find unique delimiter
-	delimiter := "EOF"
-	counter := 0
-	for strings.Contains(content, delimiter) {
-		counter++
-		delimiter = fmt.Sprintf("EOF_%d", counter)
+	// Convert to octal representation
+	var octalStr strings.Builder
+	for _, b := range []byte(content) {
+		octalStr.WriteString(fmt.Sprintf("\\%03o", b))
 	}
 
-	// Add each line as a separate element
-	i.dockerfile = append(i.dockerfile, fmt.Sprintf("RUN cat > %s << '%s'", path, delimiter))
-	i.dockerfile = append(i.dockerfile, content)
-	i.dockerfile = append(i.dockerfile, delimiter)
-
-	// Make executable if script
-	if strings.HasSuffix(path, ".py") || strings.HasSuffix(path, ".sh") {
-		i.dockerfile = append(i.dockerfile, fmt.Sprintf("RUN chmod +x %s", path))
-	}
+	// Use printf to write (handles ALL characters perfectly)
+	i.dockerfile = append(i.dockerfile,
+		fmt.Sprintf("RUN printf '%s' > %s", octalStr.String(), path))
 
 	return i
 }
