@@ -179,7 +179,6 @@ func (i *Image) File(path, content string) *Image {
 		i.dockerfile = append(i.dockerfile, fmt.Sprintf("RUN mkdir -p %s", dir))
 	}
 
-	// ALWAYS use cat with heredoc for maximum reliability
 	// Find unique delimiter
 	delimiter := "EOF"
 	counter := 0
@@ -188,10 +187,10 @@ func (i *Image) File(path, content string) *Image {
 		delimiter = fmt.Sprintf("EOF_%d", counter)
 	}
 
-	// Add file using cat with heredoc (handles ALL escaping automatically)
-	i.dockerfile = append(i.dockerfile,
-		fmt.Sprintf("RUN cat > %s << '%s'\n%s\n%s",
-			path, delimiter, content, delimiter))
+	// Add each line as a separate element
+	i.dockerfile = append(i.dockerfile, fmt.Sprintf("RUN cat > %s << '%s'", path, delimiter))
+	i.dockerfile = append(i.dockerfile, content)
+	i.dockerfile = append(i.dockerfile, delimiter)
 
 	// Make executable if script
 	if strings.HasSuffix(path, ".py") || strings.HasSuffix(path, ".sh") {
