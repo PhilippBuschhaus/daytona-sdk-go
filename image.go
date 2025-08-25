@@ -2,6 +2,7 @@ package daytona
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 )
 
@@ -34,18 +35,18 @@ func DebianSlim(pythonVersion string) *Image {
 		pythonVersion = "3.11"
 	}
 	i.dockerfile = append(i.dockerfile, fmt.Sprintf("FROM python:%s-slim-bookworm", pythonVersion))
-	
+
 	// Update system and install basic tools
-	i.dockerfile = append(i.dockerfile, 
+	i.dockerfile = append(i.dockerfile,
 		"RUN apt-get update && apt-get install -y --no-install-recommends \\",
 		"    build-essential \\",
 		"    curl \\",
 		"    git \\",
 		"    && rm -rf /var/lib/apt/lists/*")
-	
+
 	// Upgrade pip
 	i.dockerfile = append(i.dockerfile, "RUN pip install --upgrade pip")
-	
+
 	return i
 }
 
@@ -56,18 +57,18 @@ func UbuntuSlim(pythonVersion string) *Image {
 		pythonVersion = "3.11"
 	}
 	i.dockerfile = append(i.dockerfile, fmt.Sprintf("FROM python:%s-slim", pythonVersion))
-	
+
 	// Update system
-	i.dockerfile = append(i.dockerfile, 
+	i.dockerfile = append(i.dockerfile,
 		"RUN apt-get update && apt-get install -y --no-install-recommends \\",
 		"    build-essential \\",
 		"    curl \\",
 		"    git \\",
 		"    && rm -rf /var/lib/apt/lists/*")
-	
+
 	// Upgrade pip
 	i.dockerfile = append(i.dockerfile, "RUN pip install --upgrade pip")
-	
+
 	return i
 }
 
@@ -100,7 +101,7 @@ func (i *Image) PipInstallFromRequirements(requirementsPath string) *Image {
 func (i *Image) AptInstall(packages []string) *Image {
 	if len(packages) > 0 {
 		packagesStr := strings.Join(packages, " ")
-		i.dockerfile = append(i.dockerfile, 
+		i.dockerfile = append(i.dockerfile,
 			fmt.Sprintf("RUN apt-get update && apt-get install -y %s && rm -rf /var/lib/apt/lists/*", packagesStr))
 	}
 	return i
@@ -167,9 +168,22 @@ func (i *Image) Add(src, dest string) *Image {
 
 // File creates a file with the specified content in the image
 func (i *Image) File(path, content string) *Image {
-	// Use heredoc syntax for clean multi-line file creation
-	i.dockerfile = append(i.dockerfile, fmt.Sprintf("COPY <<'EOF' %s\n%s\nEOF", path, content))
-	
+	// Create parent directory if needed
+	dir := filepath.Dir(path)
+	if dir != "" && dir != "/" && dir != "." {
+		i.dockerfile = append(i.dockerfile, fmt.Sprintf("RUN mkdir -p %s", dir))
+	}
+
+	// Generate a safe delimiter
+	delimiter := "EOF"
+	for strings.Contains(content, delimiter) {
+		delimiter = delimiter + "_"
+	}
+
+	// Add COPY command with heredoc
+	i.dockerfile = append(i.dockerfile, fmt.Sprintf("COPY <<'%s' %s\n%s\n%s",
+		delimiter, path, content, delimiter))
+
 	return i
 }
 
