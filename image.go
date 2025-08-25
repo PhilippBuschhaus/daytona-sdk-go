@@ -167,22 +167,8 @@ func (i *Image) Add(src, dest string) *Image {
 
 // File creates a file with the specified content in the image
 func (i *Image) File(path, content string) *Image {
-	// Escape the content for shell - replace single quotes and backslashes
-	escapedContent := strings.ReplaceAll(content, "\\", "\\\\")
-	escapedContent = strings.ReplaceAll(escapedContent, "'", "'\\''")
-	
-	// Create parent directory if needed and write file
-	dir := ""
-	if idx := strings.LastIndex(path, "/"); idx != -1 {
-		dir = path[:idx]
-	}
-	
-	if dir != "" && dir != "/" {
-		i.dockerfile = append(i.dockerfile, fmt.Sprintf("RUN mkdir -p %s", dir))
-	}
-	
-	// Use echo with -e flag to handle escape sequences and write to file
-	i.dockerfile = append(i.dockerfile, fmt.Sprintf("RUN echo '%s' > %s", escapedContent, path))
+	// Use heredoc syntax for clean multi-line file creation
+	i.dockerfile = append(i.dockerfile, fmt.Sprintf("COPY <<'EOF' %s\n%s\nEOF", path, content))
 	
 	return i
 }
