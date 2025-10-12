@@ -12,7 +12,6 @@ Contact: support@daytona.com
 package apiclient
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 )
@@ -22,19 +21,19 @@ var _ MappedNullable = &CreateRunner{}
 
 // CreateRunner struct for CreateRunner
 type CreateRunner struct {
-	Domain    string  `json:"domain"`
-	ApiUrl    string  `json:"apiUrl"`
-	ProxyUrl  string  `json:"proxyUrl"`
-	ApiKey    string  `json:"apiKey"`
-	Cpu       float32 `json:"cpu"`
-	MemoryGiB float32 `json:"memoryGiB"`
-	DiskGiB   float32 `json:"diskGiB"`
-	Gpu       float32 `json:"gpu"`
-	GpuType   string  `json:"gpuType"`
-	Class     string  `json:"class"`
-	Capacity  float32 `json:"capacity"`
-	Region    string  `json:"region"`
-	Version   string  `json:"version"`
+	Domain               string  `json:"domain"`
+	ApiUrl               string  `json:"apiUrl"`
+	ProxyUrl             string  `json:"proxyUrl"`
+	ApiKey               string  `json:"apiKey"`
+	Cpu                  float32 `json:"cpu"`
+	MemoryGiB            float32 `json:"memoryGiB"`
+	DiskGiB              float32 `json:"diskGiB"`
+	Gpu                  float32 `json:"gpu"`
+	GpuType              string  `json:"gpuType"`
+	Class                string  `json:"class"`
+	Region               string  `json:"region"`
+	Version              string  `json:"version"`
+	AdditionalProperties map[string]interface{}
 }
 
 type _CreateRunner CreateRunner
@@ -43,7 +42,7 @@ type _CreateRunner CreateRunner
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCreateRunner(domain string, apiUrl string, proxyUrl string, apiKey string, cpu float32, memoryGiB float32, diskGiB float32, gpu float32, gpuType string, class string, capacity float32, region string, version string) *CreateRunner {
+func NewCreateRunner(domain string, apiUrl string, proxyUrl string, apiKey string, cpu float32, memoryGiB float32, diskGiB float32, gpu float32, gpuType string, class string, region string, version string) *CreateRunner {
 	this := CreateRunner{}
 	this.Domain = domain
 	this.ApiUrl = apiUrl
@@ -55,7 +54,6 @@ func NewCreateRunner(domain string, apiUrl string, proxyUrl string, apiKey strin
 	this.Gpu = gpu
 	this.GpuType = gpuType
 	this.Class = class
-	this.Capacity = capacity
 	this.Region = region
 	this.Version = version
 	return &this
@@ -309,30 +307,6 @@ func (o *CreateRunner) SetClass(v string) {
 	o.Class = v
 }
 
-// GetCapacity returns the Capacity field value
-func (o *CreateRunner) GetCapacity() float32 {
-	if o == nil {
-		var ret float32
-		return ret
-	}
-
-	return o.Capacity
-}
-
-// GetCapacityOk returns a tuple with the Capacity field value
-// and a boolean to check if the value has been set.
-func (o *CreateRunner) GetCapacityOk() (*float32, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Capacity, true
-}
-
-// SetCapacity sets field value
-func (o *CreateRunner) SetCapacity(v float32) {
-	o.Capacity = v
-}
-
 // GetRegion returns the Region field value
 func (o *CreateRunner) GetRegion() string {
 	if o == nil {
@@ -401,9 +375,13 @@ func (o CreateRunner) ToMap() (map[string]interface{}, error) {
 	toSerialize["gpu"] = o.Gpu
 	toSerialize["gpuType"] = o.GpuType
 	toSerialize["class"] = o.Class
-	toSerialize["capacity"] = o.Capacity
 	toSerialize["region"] = o.Region
 	toSerialize["version"] = o.Version
+
+	for key, value := range o.AdditionalProperties {
+		toSerialize[key] = value
+	}
+
 	return toSerialize, nil
 }
 
@@ -422,7 +400,6 @@ func (o *CreateRunner) UnmarshalJSON(data []byte) (err error) {
 		"gpu",
 		"gpuType",
 		"class",
-		"capacity",
 		"region",
 		"version",
 	}
@@ -443,15 +420,31 @@ func (o *CreateRunner) UnmarshalJSON(data []byte) (err error) {
 
 	varCreateRunner := _CreateRunner{}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varCreateRunner)
+	err = json.Unmarshal(data, &varCreateRunner)
 
 	if err != nil {
 		return err
 	}
 
 	*o = CreateRunner(varCreateRunner)
+
+	additionalProperties := make(map[string]interface{})
+
+	if err = json.Unmarshal(data, &additionalProperties); err == nil {
+		delete(additionalProperties, "domain")
+		delete(additionalProperties, "apiUrl")
+		delete(additionalProperties, "proxyUrl")
+		delete(additionalProperties, "apiKey")
+		delete(additionalProperties, "cpu")
+		delete(additionalProperties, "memoryGiB")
+		delete(additionalProperties, "diskGiB")
+		delete(additionalProperties, "gpu")
+		delete(additionalProperties, "gpuType")
+		delete(additionalProperties, "class")
+		delete(additionalProperties, "region")
+		delete(additionalProperties, "version")
+		o.AdditionalProperties = additionalProperties
+	}
 
 	return err
 }

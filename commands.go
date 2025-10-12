@@ -22,25 +22,25 @@ func (c *Client) ExecuteCommand(ctx context.Context, sandboxID string, req *Exec
 	if req == nil || req.Command == "" {
 		return nil, fmt.Errorf("command is required")
 	}
-	
+
 	// Create the API request
 	execReq := api.ExecuteRequest{
 		Command: req.Command,
 	}
-	
+
 	if req.Cwd != "" {
 		execReq.Cwd = &req.Cwd
 	}
 	if req.Timeout > 0 {
 		execReq.Timeout = &req.Timeout
 	}
-	
+
 	// Execute the command
 	resp, _, err := c.apiClient.ToolboxAPI.ExecuteCommand(ctx, sandboxID).ExecuteRequest(execReq).Execute()
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute command: %w", err)
 	}
-	
+
 	return resp, nil
 }
 
@@ -49,16 +49,16 @@ func (c *Client) CreateSession(ctx context.Context, sandboxID string, sessionID 
 	if sandboxID == "" || sessionID == "" {
 		return fmt.Errorf("sandbox ID and session ID are required")
 	}
-	
+
 	req := api.CreateSessionRequest{
 		SessionId: sessionID,
 	}
-	
+
 	_, err := c.apiClient.ToolboxAPI.CreateSession(ctx, sandboxID).CreateSessionRequest(req).Execute()
 	if err != nil {
 		return fmt.Errorf("failed to create session: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -70,16 +70,16 @@ func (c *Client) ExecuteSessionCommand(ctx context.Context, sandboxID, sessionID
 	if command == "" {
 		return nil, fmt.Errorf("command is required")
 	}
-	
+
 	req := api.SessionExecuteRequest{
 		Command: command,
 	}
-	
+
 	resp, _, err := c.apiClient.ToolboxAPI.ExecuteSessionCommand(ctx, sandboxID, sessionID).SessionExecuteRequest(req).Execute()
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute session command: %w", err)
 	}
-	
+
 	return resp, nil
 }
 
@@ -88,11 +88,11 @@ func (c *Client) DeleteSession(ctx context.Context, sandboxID, sessionID string)
 	if sandboxID == "" || sessionID == "" {
 		return fmt.Errorf("sandbox ID and session ID are required")
 	}
-	
+
 	_, err := c.apiClient.ToolboxAPI.DeleteSession(ctx, sandboxID, sessionID).Execute()
 	if err != nil {
 		return fmt.Errorf("failed to delete session: %w", err)
 	}
-	
+
 	return nil
 }

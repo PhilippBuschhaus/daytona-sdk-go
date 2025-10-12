@@ -20,6 +20,8 @@ var _ MappedNullable = &CreateSandbox{}
 
 // CreateSandbox struct for CreateSandbox
 type CreateSandbox struct {
+	// The name of the sandbox. If not provided, the sandbox ID will be used as the name
+	Name *string `json:"name,omitempty"`
 	// The ID or name of the snapshot used for the sandbox
 	Snapshot *string `json:"snapshot,omitempty"`
 	// The user associated with the project
@@ -55,8 +57,11 @@ type CreateSandbox struct {
 	// Array of volumes to attach to the sandbox
 	Volumes []SandboxVolume `json:"volumes,omitempty"`
 	// Build information for the sandbox
-	BuildInfo *CreateBuildInfo `json:"buildInfo,omitempty"`
+	BuildInfo            *CreateBuildInfo `json:"buildInfo,omitempty"`
+	AdditionalProperties map[string]interface{}
 }
+
+type _CreateSandbox CreateSandbox
 
 // NewCreateSandbox instantiates a new CreateSandbox object
 // This constructor will assign default values to properties that have it defined,
@@ -73,6 +78,38 @@ func NewCreateSandbox() *CreateSandbox {
 func NewCreateSandboxWithDefaults() *CreateSandbox {
 	this := CreateSandbox{}
 	return &this
+}
+
+// GetName returns the Name field value if set, zero value otherwise.
+func (o *CreateSandbox) GetName() string {
+	if o == nil || IsNil(o.Name) {
+		var ret string
+		return ret
+	}
+	return *o.Name
+}
+
+// GetNameOk returns a tuple with the Name field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CreateSandbox) GetNameOk() (*string, bool) {
+	if o == nil || IsNil(o.Name) {
+		return nil, false
+	}
+	return o.Name, true
+}
+
+// HasName returns a boolean if a field has been set.
+func (o *CreateSandbox) HasName() bool {
+	if o != nil && !IsNil(o.Name) {
+		return true
+	}
+
+	return false
+}
+
+// SetName gets a reference to the given string and assigns it to the Name field.
+func (o *CreateSandbox) SetName(v string) {
+	o.Name = &v
 }
 
 // GetSnapshot returns the Snapshot field value if set, zero value otherwise.
@@ -661,6 +698,9 @@ func (o CreateSandbox) MarshalJSON() ([]byte, error) {
 
 func (o CreateSandbox) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
+	if !IsNil(o.Name) {
+		toSerialize["name"] = o.Name
+	}
 	if !IsNil(o.Snapshot) {
 		toSerialize["snapshot"] = o.Snapshot
 	}
@@ -715,7 +755,51 @@ func (o CreateSandbox) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.BuildInfo) {
 		toSerialize["buildInfo"] = o.BuildInfo
 	}
+
+	for key, value := range o.AdditionalProperties {
+		toSerialize[key] = value
+	}
+
 	return toSerialize, nil
+}
+
+func (o *CreateSandbox) UnmarshalJSON(data []byte) (err error) {
+	varCreateSandbox := _CreateSandbox{}
+
+	err = json.Unmarshal(data, &varCreateSandbox)
+
+	if err != nil {
+		return err
+	}
+
+	*o = CreateSandbox(varCreateSandbox)
+
+	additionalProperties := make(map[string]interface{})
+
+	if err = json.Unmarshal(data, &additionalProperties); err == nil {
+		delete(additionalProperties, "name")
+		delete(additionalProperties, "snapshot")
+		delete(additionalProperties, "user")
+		delete(additionalProperties, "env")
+		delete(additionalProperties, "labels")
+		delete(additionalProperties, "public")
+		delete(additionalProperties, "networkBlockAll")
+		delete(additionalProperties, "networkAllowList")
+		delete(additionalProperties, "class")
+		delete(additionalProperties, "target")
+		delete(additionalProperties, "cpu")
+		delete(additionalProperties, "gpu")
+		delete(additionalProperties, "memory")
+		delete(additionalProperties, "disk")
+		delete(additionalProperties, "autoStopInterval")
+		delete(additionalProperties, "autoArchiveInterval")
+		delete(additionalProperties, "autoDeleteInterval")
+		delete(additionalProperties, "volumes")
+		delete(additionalProperties, "buildInfo")
+		o.AdditionalProperties = additionalProperties
+	}
+
+	return err
 }
 
 type NullableCreateSandbox struct {

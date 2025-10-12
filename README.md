@@ -77,7 +77,7 @@ func main() {
     fmt.Printf("Output: %s\n", result.Result)
     
     // Clean up
-    err = client.DeleteSandbox(ctx, sandbox.GetId(), true)
+    err = client.DeleteSandbox(ctx, sandbox.GetId())
     if err != nil {
         log.Fatal(err)
     }
@@ -195,7 +195,7 @@ client, err := daytona.NewClient(&daytona.Config{
 - `StartSandbox(ctx, sandboxID)` - Start a sandbox
 - `StopSandbox(ctx, sandboxID)` - Stop a sandbox
 - `ArchiveSandbox(ctx, sandboxID)` - Archive a sandbox
-- `DeleteSandbox(ctx, sandboxID, force)` - Delete a sandbox
+- `DeleteSandbox(ctx, sandboxID)` - Delete a sandbox
 - `WaitForSandboxReady(ctx, sandboxID, timeout)` - Wait for sandbox to be ready
 
 ### File Operations

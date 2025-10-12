@@ -18,14 +18,14 @@ func main() {
 	}
 
 	ctx := context.Background()
-	
+
 	fmt.Println("=== File Operations Example ===\n")
 
 	// Create a new sandbox for file operations
 	fmt.Println("Creating sandbox for file operations...")
 	createReq := &daytona.CreateSandboxRequest{
 		Target: daytona.StringPtr("eu"), // Required: deployment region
-		
+
 		// Optional: Labels for organization
 		Labels: map[string]string{
 			"example": "file_operations",
@@ -145,7 +145,7 @@ This is a test file created by the Daytona Go SDK.
 
 	// Clean up sandbox
 	fmt.Println("\nCleaning up...")
-	err = client.DeleteSandbox(ctx, sandboxID, true)
+	err = client.DeleteSandbox(ctx, sandboxID)
 	if err != nil {
 		log.Printf("Failed to delete sandbox: %v\n", err)
 	} else {

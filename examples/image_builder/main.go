@@ -23,14 +23,14 @@ func main() {
 	// Example 1: Simple Python data science image
 	fmt.Println("Example 1: Data Science Image")
 	fmt.Println("------------------------------")
-	
+
 	dataScience := daytona.PythonDataScience("3.11")
 	fmt.Printf("Generated Dockerfile:\n%s\n", dataScience.Build())
 
 	// Example 2: Custom web application image
 	fmt.Println("\nExample 2: Web Application Image")
 	fmt.Println("---------------------------------")
-	
+
 	webApp := daytona.DebianSlim("3.11").
 		PipInstall([]string{"fastapi", "uvicorn[standard]", "sqlalchemy", "alembic"}).
 		AptInstall([]string{"postgresql-client"}).
@@ -40,13 +40,13 @@ func main() {
 		Copy(".", "/app").
 		Expose(8000).
 		Cmd([]string{"uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"})
-	
+
 	fmt.Printf("Generated Dockerfile:\n%s\n", webApp.Build())
 
 	// Example 3: Multi-stage Go build
 	fmt.Println("\nExample 3: Go Application Image")
 	fmt.Println("--------------------------------")
-	
+
 	goApp := daytona.Base("golang:1.21 AS builder").
 		Workdir("/build").
 		Copy("go.mod", ".").
@@ -57,26 +57,26 @@ func main() {
 		// Note: In a real multi-stage build, you'd need a second FROM
 		// This is just demonstrating the builder pattern
 		Workdir("/app")
-	
+
 	fmt.Printf("Generated Dockerfile:\n%s\n", goApp.Build())
 
 	// Example 4: Node.js with custom packages
 	fmt.Println("\nExample 4: Node.js Application")
 	fmt.Println("-------------------------------")
-	
+
 	nodeApp := daytona.NodeJS("20").
 		Copy("package*.json", "./").
 		RunCommand("npm ci --only=production").
 		Copy(".", ".").
 		Expose(3000).
 		Cmd([]string{"node", "server.js"})
-	
+
 	fmt.Printf("Generated Dockerfile:\n%s\n", nodeApp.Build())
 
 	// Example 5: Actually create a sandbox with a custom image
 	fmt.Println("\nExample 5: Creating Sandbox with Custom Image")
 	fmt.Println("----------------------------------------------")
-	
+
 	// Build a custom image for machine learning
 	mlImage := daytona.DebianSlim("3.11").
 		Label("project", "ml-sandbox").
@@ -141,7 +141,7 @@ func main() {
 
 	// Clean up
 	fmt.Println("\nCleaning up...")
-	err = client.DeleteSandbox(ctx, sandboxID, true)
+	err = client.DeleteSandbox(ctx, sandboxID)
 	if err != nil {
 		log.Printf("Failed to delete sandbox: %v\n", err)
 	} else {

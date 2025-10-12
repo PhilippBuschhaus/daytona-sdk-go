@@ -12,7 +12,6 @@ Contact: support@daytona.com
 package apiclient
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -57,6 +56,9 @@ type Organization struct {
 	MaxMemoryPerSandbox float32 `json:"maxMemoryPerSandbox"`
 	// Max disk per sandbox
 	MaxDiskPerSandbox float32 `json:"maxDiskPerSandbox"`
+	// Sandbox default network block all
+	SandboxLimitedNetworkEgress bool `json:"sandboxLimitedNetworkEgress"`
+	AdditionalProperties        map[string]interface{}
 }
 
 type _Organization Organization
@@ -65,7 +67,7 @@ type _Organization Organization
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewOrganization(id string, name string, createdBy string, personal bool, createdAt time.Time, updatedAt time.Time, suspended bool, suspendedAt time.Time, suspensionReason string, suspendedUntil time.Time, suspensionCleanupGracePeriodHours float32, totalCpuQuota float32, totalMemoryQuota float32, totalDiskQuota float32, maxCpuPerSandbox float32, maxMemoryPerSandbox float32, maxDiskPerSandbox float32) *Organization {
+func NewOrganization(id string, name string, createdBy string, personal bool, createdAt time.Time, updatedAt time.Time, suspended bool, suspendedAt time.Time, suspensionReason string, suspendedUntil time.Time, suspensionCleanupGracePeriodHours float32, totalCpuQuota float32, totalMemoryQuota float32, totalDiskQuota float32, maxCpuPerSandbox float32, maxMemoryPerSandbox float32, maxDiskPerSandbox float32, sandboxLimitedNetworkEgress bool) *Organization {
 	this := Organization{}
 	this.Id = id
 	this.Name = name
@@ -84,6 +86,7 @@ func NewOrganization(id string, name string, createdBy string, personal bool, cr
 	this.MaxCpuPerSandbox = maxCpuPerSandbox
 	this.MaxMemoryPerSandbox = maxMemoryPerSandbox
 	this.MaxDiskPerSandbox = maxDiskPerSandbox
+	this.SandboxLimitedNetworkEgress = sandboxLimitedNetworkEgress
 	return &this
 }
 
@@ -503,6 +506,30 @@ func (o *Organization) SetMaxDiskPerSandbox(v float32) {
 	o.MaxDiskPerSandbox = v
 }
 
+// GetSandboxLimitedNetworkEgress returns the SandboxLimitedNetworkEgress field value
+func (o *Organization) GetSandboxLimitedNetworkEgress() bool {
+	if o == nil {
+		var ret bool
+		return ret
+	}
+
+	return o.SandboxLimitedNetworkEgress
+}
+
+// GetSandboxLimitedNetworkEgressOk returns a tuple with the SandboxLimitedNetworkEgress field value
+// and a boolean to check if the value has been set.
+func (o *Organization) GetSandboxLimitedNetworkEgressOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.SandboxLimitedNetworkEgress, true
+}
+
+// SetSandboxLimitedNetworkEgress sets field value
+func (o *Organization) SetSandboxLimitedNetworkEgress(v bool) {
+	o.SandboxLimitedNetworkEgress = v
+}
+
 func (o Organization) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
@@ -530,6 +557,12 @@ func (o Organization) ToMap() (map[string]interface{}, error) {
 	toSerialize["maxCpuPerSandbox"] = o.MaxCpuPerSandbox
 	toSerialize["maxMemoryPerSandbox"] = o.MaxMemoryPerSandbox
 	toSerialize["maxDiskPerSandbox"] = o.MaxDiskPerSandbox
+	toSerialize["sandboxLimitedNetworkEgress"] = o.SandboxLimitedNetworkEgress
+
+	for key, value := range o.AdditionalProperties {
+		toSerialize[key] = value
+	}
+
 	return toSerialize, nil
 }
 
@@ -555,6 +588,7 @@ func (o *Organization) UnmarshalJSON(data []byte) (err error) {
 		"maxCpuPerSandbox",
 		"maxMemoryPerSandbox",
 		"maxDiskPerSandbox",
+		"sandboxLimitedNetworkEgress",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -573,15 +607,37 @@ func (o *Organization) UnmarshalJSON(data []byte) (err error) {
 
 	varOrganization := _Organization{}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varOrganization)
+	err = json.Unmarshal(data, &varOrganization)
 
 	if err != nil {
 		return err
 	}
 
 	*o = Organization(varOrganization)
+
+	additionalProperties := make(map[string]interface{})
+
+	if err = json.Unmarshal(data, &additionalProperties); err == nil {
+		delete(additionalProperties, "id")
+		delete(additionalProperties, "name")
+		delete(additionalProperties, "createdBy")
+		delete(additionalProperties, "personal")
+		delete(additionalProperties, "createdAt")
+		delete(additionalProperties, "updatedAt")
+		delete(additionalProperties, "suspended")
+		delete(additionalProperties, "suspendedAt")
+		delete(additionalProperties, "suspensionReason")
+		delete(additionalProperties, "suspendedUntil")
+		delete(additionalProperties, "suspensionCleanupGracePeriodHours")
+		delete(additionalProperties, "totalCpuQuota")
+		delete(additionalProperties, "totalMemoryQuota")
+		delete(additionalProperties, "totalDiskQuota")
+		delete(additionalProperties, "maxCpuPerSandbox")
+		delete(additionalProperties, "maxMemoryPerSandbox")
+		delete(additionalProperties, "maxDiskPerSandbox")
+		delete(additionalProperties, "sandboxLimitedNetworkEgress")
+		o.AdditionalProperties = additionalProperties
+	}
 
 	return err
 }

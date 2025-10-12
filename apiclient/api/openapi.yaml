@@ -10,6 +10,20 @@ info:
 servers:
   - url: http://localhost:3000
 paths:
+  /config:
+    get:
+      operationId: ConfigController_getConfig
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaytonaConfiguration'
+          description: Daytona configuration
+      summary: Get config
+      tags:
+        - config
   /api-keys:
     get:
       operationId: listApiKeys
@@ -166,6 +180,44 @@ paths:
             - profile
             - email
       summary: Get API key
+      tags:
+        - api-keys
+  /api-keys/{userId}/{name}:
+    delete:
+      operationId: deleteApiKeyForUser
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: name
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '204':
+          description: API key deleted successfully.
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: Delete API key for user
       tags:
         - api-keys
   /organizations/invitations:
@@ -373,7 +425,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UsageOverview'
+                $ref: '#/components/schemas/OrganizationUsageOverview'
           description: Current usage overview
       security:
         - bearer: []
@@ -522,6 +574,36 @@ paths:
             - profile
             - email
       summary: Get organization by sandbox ID
+      tags:
+        - organizations
+  /organizations/{organizationId}/sandbox-default-limited-network-egress:
+    post:
+      operationId: updateSandboxDefaultLimitedNetworkEgress
+      parameters:
+        - description: Organization ID
+          explode: false
+          in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+          style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizationSandboxDefaultLimitedNetworkEgress'
+        required: true
+      responses:
+        '204':
+          description: Sandbox default limited network egress updated successfully
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: Update sandbox default limited network egress
       tags:
         - organizations
   /organizations/{organizationId}/roles:
@@ -690,9 +772,9 @@ paths:
       summary: List organization members
       tags:
         - organizations
-  /organizations/{organizationId}/users/{userId}/role:
+  /organizations/{organizationId}/users/{userId}/access:
     post:
-      operationId: updateRoleForOrganizationMember
+      operationId: updateAccessForOrganizationMember
       parameters:
         - description: Organization ID
           explode: false
@@ -714,7 +796,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateOrganizationMemberRole'
+              $ref: '#/components/schemas/UpdateOrganizationMemberAccess'
         required: true
       responses:
         '200':
@@ -722,56 +804,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrganizationUser'
-          description: Role updated successfully
+          description: Access updated successfully
       security:
         - bearer: []
         - oauth2:
             - openid
             - profile
             - email
-      summary: Update role for organization member
-      tags:
-        - organizations
-  /organizations/{organizationId}/users/{userId}/assigned-roles:
-    post:
-      operationId: updateAssignedOrganizationRoles
-      parameters:
-        - description: Organization ID
-          explode: false
-          in: path
-          name: organizationId
-          required: true
-          schema:
-            type: string
-          style: simple
-        - description: User ID
-          explode: false
-          in: path
-          name: userId
-          required: true
-          schema:
-            type: string
-          style: simple
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateAssignedOrganizationRoles'
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrganizationUser'
-          description: Assigned roles updated successfully
-      security:
-        - bearer: []
-        - oauth2:
-            - openid
-            - profile
-            - email
-      summary: Update assigned roles to organization member
+      summary: Update access for organization member
       tags:
         - organizations
   /organizations/{organizationId}/users/{userId}:
@@ -1232,7 +1272,317 @@ paths:
       summary: Create a new sandbox
       tags:
         - sandbox
-  /sandbox/{sandboxId}:
+  /sandbox/paginated:
+    get:
+      operationId: listSandboxesPaginated
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - description: Page number of the results
+          explode: true
+          in: query
+          name: page
+          required: false
+          schema:
+            default: 1
+            minimum: 1
+            type: number
+          style: form
+        - description: Number of results per page
+          explode: true
+          in: query
+          name: limit
+          required: false
+          schema:
+            default: 100
+            maximum: 200
+            minimum: 1
+            type: number
+          style: form
+        - description: Filter by partial ID match
+          explode: true
+          in: query
+          name: id
+          required: false
+          schema:
+            example: abc123
+            type: string
+          style: form
+        - description: Filter by partial name match
+          explode: true
+          in: query
+          name: name
+          required: false
+          schema:
+            example: abc123
+            type: string
+          style: form
+        - description: JSON encoded labels to filter by
+          explode: true
+          in: query
+          name: labels
+          required: false
+          schema:
+            example: '{"label1": "value1", "label2": "value2"}'
+            type: string
+          style: form
+        - description: Include results with errored state and deleted desired state
+          explode: true
+          in: query
+          name: includeErroredDeleted
+          required: false
+          schema:
+            default: false
+            type: boolean
+          style: form
+        - description: List of states to filter by
+          explode: true
+          in: query
+          name: states
+          required: false
+          schema:
+            items:
+              enum:
+                - creating
+                - restoring
+                - destroying
+                - started
+                - stopped
+                - starting
+                - stopping
+                - error
+                - build_failed
+                - pending_build
+                - building_snapshot
+                - unknown
+                - pulling_snapshot
+                - archived
+                - archiving
+              type: string
+            type: array
+          style: form
+        - description: List of snapshot names to filter by
+          explode: true
+          in: query
+          name: snapshots
+          required: false
+          schema:
+            items:
+              type: string
+            type: array
+          style: form
+        - description: List of regions to filter by
+          explode: true
+          in: query
+          name: regions
+          required: false
+          schema:
+            items:
+              type: string
+            type: array
+          style: form
+        - description: Minimum CPU
+          explode: true
+          in: query
+          name: minCpu
+          required: false
+          schema:
+            minimum: 1
+            type: number
+          style: form
+        - description: Maximum CPU
+          explode: true
+          in: query
+          name: maxCpu
+          required: false
+          schema:
+            minimum: 1
+            type: number
+          style: form
+        - description: Minimum memory in GiB
+          explode: true
+          in: query
+          name: minMemoryGiB
+          required: false
+          schema:
+            minimum: 1
+            type: number
+          style: form
+        - description: Maximum memory in GiB
+          explode: true
+          in: query
+          name: maxMemoryGiB
+          required: false
+          schema:
+            minimum: 1
+            type: number
+          style: form
+        - description: Minimum disk space in GiB
+          explode: true
+          in: query
+          name: minDiskGiB
+          required: false
+          schema:
+            minimum: 1
+            type: number
+          style: form
+        - description: Maximum disk space in GiB
+          explode: true
+          in: query
+          name: maxDiskGiB
+          required: false
+          schema:
+            minimum: 1
+            type: number
+          style: form
+        - description: Include items with last event after this timestamp
+          explode: true
+          in: query
+          name: lastEventAfter
+          required: false
+          schema:
+            example: 2024-01-01T00:00:00Z
+            format: date-time
+            type: string
+          style: form
+        - description: Include items with last event before this timestamp
+          explode: true
+          in: query
+          name: lastEventBefore
+          required: false
+          schema:
+            example: 2024-12-31T23:59:59Z
+            format: date-time
+            type: string
+          style: form
+        - description: Field to sort by
+          explode: true
+          in: query
+          name: sort
+          required: false
+          schema:
+            default: createdAt
+            enum:
+              - id
+              - name
+              - state
+              - snapshot
+              - region
+              - updatedAt
+              - createdAt
+            type: string
+          style: form
+        - description: Direction to sort by
+          explode: true
+          in: query
+          name: order
+          required: false
+          schema:
+            default: desc
+            enum:
+              - asc
+              - desc
+            type: string
+          style: form
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSandboxes'
+          description: Paginated list of all sandboxes
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: List all sandboxes paginated
+      tags:
+        - sandbox
+  /sandbox/regions:
+    get:
+      operationId: getSandboxRegions
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Region'
+                type: array
+          description: List of regions where sandboxes have been created
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: List all regions where sandboxes have been created
+      tags:
+        - sandbox
+  /sandbox/for-runner:
+    get:
+      operationId: getSandboxesForRunner
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - description: Comma-separated list of sandbox states to filter by
+          explode: true
+          in: query
+          name: states
+          required: false
+          schema:
+            type: string
+          style: form
+        - description: Skip sandboxes where state differs from desired state
+          explode: true
+          in: query
+          name: skipReconcilingSandboxes
+          required: false
+          schema:
+            type: boolean
+          style: form
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Sandbox'
+                type: array
+          description: List of sandboxes for the authenticated runner
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: Get sandboxes for the authenticated runner
+      tags:
+        - sandbox
+  /sandbox/{sandboxIdOrName}:
     delete:
       operationId: deleteSandbox
       parameters:
@@ -1244,23 +1594,20 @@ paths:
           schema:
             type: string
           style: simple
-        - description: ID of the sandbox
+        - description: ID or name of the sandbox
           explode: false
           in: path
-          name: sandboxId
+          name: sandboxIdOrName
           required: true
           schema:
             type: string
           style: simple
-        - explode: true
-          in: query
-          name: force
-          required: true
-          schema:
-            type: boolean
-          style: form
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sandbox'
           description: Sandbox has been deleted
       security:
         - bearer: []
@@ -1282,6 +1629,14 @@ paths:
           schema:
             type: string
           style: simple
+        - description: ID or name of the sandbox
+          explode: false
+          in: path
+          name: sandboxIdOrName
+          required: true
+          schema:
+            type: string
+          style: simple
         - description: Include verbose output
           explode: true
           in: query
@@ -1290,14 +1645,6 @@ paths:
           schema:
             type: boolean
           style: form
-        - description: ID of the sandbox
-          explode: false
-          in: path
-          name: sandboxId
-          required: true
-          schema:
-            type: string
-          style: simple
       responses:
         '200':
           content:
@@ -1314,7 +1661,7 @@ paths:
       summary: Get sandbox details
       tags:
         - sandbox
-  /sandbox/{sandboxId}/start:
+  /sandbox/{sandboxIdOrName}/start:
     post:
       operationId: startSandbox
       parameters:
@@ -1326,10 +1673,10 @@ paths:
           schema:
             type: string
           style: simple
-        - description: ID of the sandbox
+        - description: ID or name of the sandbox
           explode: false
           in: path
-          name: sandboxId
+          name: sandboxIdOrName
           required: true
           schema:
             type: string
@@ -1351,7 +1698,7 @@ paths:
       summary: Start sandbox
       tags:
         - sandbox
-  /sandbox/{sandboxId}/stop:
+  /sandbox/{sandboxIdOrName}/stop:
     post:
       operationId: stopSandbox
       parameters:
@@ -1363,16 +1710,20 @@ paths:
           schema:
             type: string
           style: simple
-        - description: ID of the sandbox
+        - description: ID or name of the sandbox
           explode: false
           in: path
-          name: sandboxId
+          name: sandboxIdOrName
           required: true
           schema:
             type: string
           style: simple
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sandbox'
           description: Sandbox has been stopped
       security:
         - bearer: []
@@ -1383,7 +1734,7 @@ paths:
       summary: Stop sandbox
       tags:
         - sandbox
-  /sandbox/{sandboxId}/labels:
+  /sandbox/{sandboxIdOrName}/labels:
     put:
       operationId: replaceLabels
       parameters:
@@ -1395,10 +1746,10 @@ paths:
           schema:
             type: string
           style: simple
-        - description: ID of the sandbox
+        - description: ID or name of the sandbox
           explode: false
           in: path
-          name: sandboxId
+          name: sandboxIdOrName
           required: true
           schema:
             type: string
@@ -1425,9 +1776,9 @@ paths:
       summary: Replace sandbox labels
       tags:
         - sandbox
-  /sandbox/{sandboxId}/backup:
-    post:
-      operationId: createBackup
+  /sandbox/{sandboxId}/state:
+    put:
+      operationId: updateSandboxState
       parameters:
         - description: Use with JWT to specify the organization ID
           explode: false
@@ -1441,6 +1792,44 @@ paths:
           explode: false
           in: path
           name: sandboxId
+          required: true
+          schema:
+            type: string
+          style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSandboxStateDto'
+        required: true
+      responses:
+        '200':
+          description: Sandbox state has been successfully updated
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: Update sandbox state
+      tags:
+        - sandbox
+  /sandbox/{sandboxIdOrName}/backup:
+    post:
+      operationId: createBackup
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - description: ID or name of the sandbox
+          explode: false
+          in: path
+          name: sandboxIdOrName
           required: true
           schema:
             type: string
@@ -1461,7 +1850,7 @@ paths:
       summary: Create sandbox backup
       tags:
         - sandbox
-  /sandbox/{sandboxId}/public/{isPublic}:
+  /sandbox/{sandboxIdOrName}/public/{isPublic}:
     post:
       operationId: updatePublicStatus
       parameters:
@@ -1473,10 +1862,10 @@ paths:
           schema:
             type: string
           style: simple
-        - description: ID of the sandbox
+        - description: ID or name of the sandbox
           explode: false
           in: path
-          name: sandboxId
+          name: sandboxIdOrName
           required: true
           schema:
             type: string
@@ -1490,8 +1879,12 @@ paths:
             type: boolean
           style: simple
       responses:
-        '201':
-          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sandbox'
+          description: Public status has been successfully updated
       security:
         - bearer: []
         - oauth2:
@@ -1501,7 +1894,7 @@ paths:
       summary: Update public status
       tags:
         - sandbox
-  /sandbox/{sandboxId}/autostop/{interval}:
+  /sandbox/{sandboxIdOrName}/autostop/{interval}:
     post:
       operationId: setAutostopInterval
       parameters:
@@ -1513,10 +1906,10 @@ paths:
           schema:
             type: string
           style: simple
-        - description: ID of the sandbox
+        - description: ID or name of the sandbox
           explode: false
           in: path
-          name: sandboxId
+          name: sandboxIdOrName
           required: true
           schema:
             type: string
@@ -1531,6 +1924,10 @@ paths:
           style: simple
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sandbox'
           description: Auto-stop interval has been set
       security:
         - bearer: []
@@ -1541,7 +1938,7 @@ paths:
       summary: Set sandbox auto-stop interval
       tags:
         - sandbox
-  /sandbox/{sandboxId}/autoarchive/{interval}:
+  /sandbox/{sandboxIdOrName}/autoarchive/{interval}:
     post:
       operationId: setAutoArchiveInterval
       parameters:
@@ -1553,10 +1950,10 @@ paths:
           schema:
             type: string
           style: simple
-        - description: ID of the sandbox
+        - description: ID or name of the sandbox
           explode: false
           in: path
-          name: sandboxId
+          name: sandboxIdOrName
           required: true
           schema:
             type: string
@@ -1572,6 +1969,10 @@ paths:
           style: simple
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sandbox'
           description: Auto-archive interval has been set
       security:
         - bearer: []
@@ -1582,7 +1983,7 @@ paths:
       summary: Set sandbox auto-archive interval
       tags:
         - sandbox
-  /sandbox/{sandboxId}/autodelete/{interval}:
+  /sandbox/{sandboxIdOrName}/autodelete/{interval}:
     post:
       operationId: setAutoDeleteInterval
       parameters:
@@ -1594,10 +1995,10 @@ paths:
           schema:
             type: string
           style: simple
-        - description: ID of the sandbox
+        - description: ID or name of the sandbox
           explode: false
           in: path
-          name: sandboxId
+          name: sandboxIdOrName
           required: true
           schema:
             type: string
@@ -1613,6 +2014,10 @@ paths:
           style: simple
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sandbox'
           description: Auto-delete interval has been set
       security:
         - bearer: []
@@ -1623,7 +2028,7 @@ paths:
       summary: Set sandbox auto-delete interval
       tags:
         - sandbox
-  /sandbox/{sandboxId}/archive:
+  /sandbox/{sandboxIdOrName}/archive:
     post:
       operationId: archiveSandbox
       parameters:
@@ -1637,13 +2042,17 @@ paths:
           style: simple
         - explode: false
           in: path
-          name: sandboxId
+          name: sandboxIdOrName
           required: true
           schema:
             type: string
           style: simple
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sandbox'
           description: Sandbox has been archived
       security:
         - bearer: []
@@ -1654,7 +2063,7 @@ paths:
       summary: Archive sandbox
       tags:
         - sandbox
-  /sandbox/{sandboxId}/ports/{port}/preview-url:
+  /sandbox/{sandboxIdOrName}/ports/{port}/preview-url:
     get:
       operationId: getPortPreviewUrl
       parameters:
@@ -1666,10 +2075,10 @@ paths:
           schema:
             type: string
           style: simple
-        - description: ID of the sandbox
+        - description: ID or name of the sandbox
           explode: false
           in: path
-          name: sandboxId
+          name: sandboxIdOrName
           required: true
           schema:
             type: string
@@ -1698,7 +2107,7 @@ paths:
       summary: Get preview URL for a sandbox port
       tags:
         - sandbox
-  /sandbox/{sandboxId}/build-logs:
+  /sandbox/{sandboxIdOrName}/build-logs:
     get:
       operationId: getBuildLogs
       parameters:
@@ -1710,10 +2119,10 @@ paths:
           schema:
             type: string
           style: simple
-        - description: ID of the sandbox
+        - description: ID or name of the sandbox
           explode: false
           in: path
-          name: sandboxId
+          name: sandboxIdOrName
           required: true
           schema:
             type: string
@@ -1736,6 +2145,130 @@ paths:
             - profile
             - email
       summary: Get build logs
+      tags:
+        - sandbox
+  /sandbox/{sandboxIdOrName}/ssh-access:
+    delete:
+      operationId: revokeSshAccess
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - description: ID or name of the sandbox
+          explode: false
+          in: path
+          name: sandboxIdOrName
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: "SSH access token to revoke. If not provided, all SSH access\
+            \ for the sandbox will be revoked."
+          explode: true
+          in: query
+          name: token
+          required: false
+          schema:
+            type: string
+          style: form
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sandbox'
+          description: SSH access has been revoked
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: Revoke SSH access for sandbox
+      tags:
+        - sandbox
+    post:
+      operationId: createSshAccess
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - description: ID or name of the sandbox
+          explode: false
+          in: path
+          name: sandboxIdOrName
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: 'Expiration time in minutes (default: 60)'
+          explode: true
+          in: query
+          name: expiresInMinutes
+          required: false
+          schema:
+            type: number
+          style: form
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SshAccessDto'
+          description: SSH access has been created
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: Create SSH access for sandbox
+      tags:
+        - sandbox
+  /sandbox/ssh-access/validate:
+    get:
+      operationId: validateSshAccess
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - description: SSH access token to validate
+          explode: true
+          in: query
+          name: token
+          required: true
+          schema:
+            type: string
+          style: form
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SshAccessValidationDto'
+          description: SSH access validation result
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: Validate SSH access for sandbox
       tags:
         - sandbox
   /runners:
@@ -1857,6 +2390,7 @@ paths:
         - runners
   /toolbox/{sandboxId}/toolbox/project-dir:
     get:
+      deprecated: true
       operationId: getProjectDir
       parameters:
         - description: Use with JWT to specify the organization ID
@@ -1890,6 +2424,76 @@ paths:
       summary: Get sandbox project dir
       tags:
         - toolbox
+  /toolbox/{sandboxId}/toolbox/user-home-dir:
+    get:
+      operationId: getUserHomeDir
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: sandboxId
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserHomeDirResponse'
+          description: User home directory retrieved successfully
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: Get sandbox user home dir
+      tags:
+        - toolbox
+  /toolbox/{sandboxId}/toolbox/work-dir:
+    get:
+      operationId: getWorkDir
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: sandboxId
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkDirResponse'
+          description: Work-dir retrieved successfully
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: Get sandbox work-dir
+      tags:
+        - toolbox
   /toolbox/{sandboxId}/toolbox/files:
     delete:
       description: Delete file inside sandbox
@@ -1910,6 +2514,13 @@ paths:
           schema:
             type: string
           style: simple
+        - explode: true
+          in: query
+          name: recursive
+          required: false
+          schema:
+            type: boolean
+          style: form
         - explode: true
           in: query
           name: path
@@ -1974,6 +2585,7 @@ paths:
         - toolbox
   /toolbox/{sandboxId}/toolbox/files/download:
     get:
+      deprecated: true
       description: Download file from sandbox
       operationId: downloadFile
       parameters:
@@ -2014,6 +2626,49 @@ paths:
             - profile
             - email
       summary: Download file
+      tags:
+        - toolbox
+  /toolbox/{sandboxId}/toolbox/files/bulk-download:
+    post:
+      description: Streams back a multipart/form-data bundle of the requested paths
+      operationId: downloadFiles
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: sandboxId
+          required: true
+          schema:
+            type: string
+          style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DownloadFiles'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                format: binary
+                type: string
+          description: A multipart/form-data response with each file as a part
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: Download multiple files
       tags:
         - toolbox
   /toolbox/{sandboxId}/toolbox/files/find:
@@ -3217,7 +3872,8 @@ paths:
           schema:
             type: string
           style: simple
-        - explode: true
+        - description: Whether to stream the logs
+          explode: true
           in: query
           name: follow
           required: false
@@ -3230,7 +3886,7 @@ paths:
             text/plain:
               schema:
                 type: string
-          description: Command log stream
+          description: Command log stream marked with stdout and stderr prefixes
       security:
         - bearer: []
         - oauth2:
@@ -3238,6 +3894,213 @@ paths:
             - profile
             - email
       summary: Get command logs
+      tags:
+        - toolbox
+  /toolbox/{sandboxId}/toolbox/process/pty:
+    get:
+      description: List all active PTY sessions in the sandbox
+      operationId: listPTYSessions
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: sandboxId
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PtyListResponse'
+          description: PTY sessions retrieved successfully
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: List PTY sessions
+      tags:
+        - toolbox
+    post:
+      description: Create a new PTY session in the sandbox
+      operationId: createPTYSession
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: sandboxId
+          required: true
+          schema:
+            type: string
+          style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PtyCreateRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PtyCreateResponse'
+          description: PTY session created successfully
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: Create PTY session
+      tags:
+        - toolbox
+  /toolbox/{sandboxId}/toolbox/process/pty/{sessionId}:
+    delete:
+      description: Delete a PTY session and terminate the associated process
+      operationId: deletePTYSession
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: sandboxId
+          required: true
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          description: PTY session deleted successfully
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: Delete PTY session
+      tags:
+        - toolbox
+    get:
+      description: Get PTY session information by ID
+      operationId: getPTYSession
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: sandboxId
+          required: true
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PtySessionInfo'
+          description: PTY session retrieved successfully
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: Get PTY session
+      tags:
+        - toolbox
+  /toolbox/{sandboxId}/toolbox/process/pty/{sessionId}/resize:
+    post:
+      description: Resize a PTY session
+      operationId: resizePTYSession
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: sandboxId
+          required: true
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+          style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PtyResizeRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PtySessionInfo'
+          description: PTY session resized successfully
+      security:
+        - bearer: []
+        - oauth2:
+            - openid
+            - profile
+            - email
+      summary: Resize PTY session
       tags:
         - toolbox
   /toolbox/{sandboxId}/toolbox/lsp/completions:
@@ -4508,29 +5371,69 @@ paths:
           schema:
             type: string
           style: simple
-        - description: Number of items per page
-          explode: true
-          in: query
-          name: limit
-          required: false
-          schema:
-            type: number
-          style: form
-        - description: Page number
+        - description: Page number of the results
           explode: true
           in: query
           name: page
           required: false
           schema:
+            default: 1
+            minimum: 1
             type: number
+          style: form
+        - description: Number of results per page
+          explode: true
+          in: query
+          name: limit
+          required: false
+          schema:
+            default: 100
+            maximum: 200
+            minimum: 1
+            type: number
+          style: form
+        - description: Filter by partial name match
+          explode: true
+          in: query
+          name: name
+          required: false
+          schema:
+            example: abc123
+            type: string
+          style: form
+        - description: Field to sort by
+          explode: true
+          in: query
+          name: sort
+          required: false
+          schema:
+            default: lastUsedAt
+            enum:
+              - name
+              - state
+              - lastUsedAt
+              - createdAt
+            type: string
+          style: form
+        - description: Direction to sort by
+          explode: true
+          in: query
+          name: order
+          required: false
+          schema:
+            default: desc
+            enum:
+              - asc
+              - desc
+            type: string
           style: form
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedSnapshotsDto'
-          description: List of all snapshots with pagination
+                $ref: '#/components/schemas/PaginatedSnapshots'
+          description: Paginated list of all snapshots
       security:
         - bearer: []
         - oauth2:
@@ -4969,14 +5872,6 @@ paths:
           schema:
             type: string
           style: simple
-        - description: Include verbose output
-          explode: true
-          in: query
-          name: verbose
-          required: false
-          schema:
-            type: boolean
-          style: form
         - description: ID of the workspace
           explode: false
           in: path
@@ -4985,6 +5880,14 @@ paths:
           schema:
             type: string
           style: simple
+        - description: Include verbose output
+          explode: true
+          in: query
+          name: verbose
+          required: false
+          schema:
+            type: boolean
+          style: form
       responses:
         '200':
           content:
@@ -5337,7 +6240,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PortPreviewUrl'
+                $ref: '#/components/schemas/WorkspacePortPreviewUrl'
           description: Preview URL for the specified port
       security:
         - bearer: []
@@ -5873,6 +6776,198 @@ paths:
       summary: Set default registry
       tags:
         - docker-registry
+  /webhooks/organizations/{organizationId}/app-portal-access:
+    post:
+      operationId: WebhookController_getAppPortalAccess
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAppPortalAccess'
+          description: App Portal access generated successfully
+      security:
+        - bearer: []
+      summary: Get Svix Consumer App Portal access URL for an organization
+      tags:
+        - webhooks
+  /webhooks/organizations/{organizationId}/send:
+    post:
+      operationId: WebhookController_sendWebhook
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+          style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendWebhookDto'
+        required: true
+      responses:
+        '200':
+          description: Webhook message sent successfully
+      security:
+        - bearer: []
+      summary: Send a webhook message to an organization
+      tags:
+        - webhooks
+  /webhooks/organizations/{organizationId}/messages/{messageId}/attempts:
+    get:
+      operationId: WebhookController_getMessageAttempts
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: messageId
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  type: object
+                type: array
+          description: List of delivery attempts
+      security:
+        - bearer: []
+      summary: Get delivery attempts for a webhook message
+      tags:
+        - webhooks
+  /webhooks/status:
+    get:
+      operationId: WebhookController_getStatus
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookController_getStatus_200_response'
+          description: Webhook service status
+      security:
+        - bearer: []
+      summary: Get webhook service status
+      tags:
+        - webhooks
+  /webhooks/organizations/{organizationId}/initialization-status:
+    get:
+      operationId: WebhookController_getInitializationStatus
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookInitializationStatus'
+          description: Webhook initialization status
+        '404':
+          description: Webhook initialization status not found
+      security:
+        - bearer: []
+      summary: Get webhook initialization status for an organization
+      tags:
+        - webhooks
+  /webhooks/organizations/{organizationId}/initialize:
+    post:
+      operationId: WebhookController_initializeWebhooks
+      parameters:
+        - description: Use with JWT to specify the organization ID
+          explode: false
+          in: header
+          name: X-Daytona-Organization-ID
+          required: false
+          schema:
+            type: string
+          style: simple
+        - explode: false
+          in: path
+          name: organizationId
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '201':
+          description: Webhooks initialized successfully
+        '403':
+          description: User does not have access to this organization
+        '404':
+          description: Organization not found
+      security:
+        - bearer: []
+      summary: Initialize webhooks for an organization
+      tags:
+        - webhooks
   /object-storage/push-access:
     get:
       operationId: getPushAccess
@@ -5893,6 +6988,7 @@ paths:
                 $ref: '#/components/schemas/StorageAccessDto'
           description: Temporary storage access has been generated
       security:
+        - bearer: []
         - oauth2:
             - openid
             - profile
@@ -5904,20 +7000,25 @@ paths:
     get:
       operationId: getAllAuditLogs
       parameters:
-        - description: 'Number of items per page (default: 10)'
-          explode: true
-          in: query
-          name: limit
-          required: false
-          schema:
-            type: number
-          style: form
-        - description: 'Page number (default: 1)'
+        - description: Page number of the results
           explode: true
           in: query
           name: page
           required: false
           schema:
+            default: 1
+            minimum: 1
+            type: number
+          style: form
+        - description: Number of results per page
+          explode: true
+          in: query
+          name: limit
+          required: false
+          schema:
+            default: 100
+            maximum: 200
+            minimum: 1
             type: number
           style: form
       responses:
@@ -5973,20 +7074,25 @@ paths:
           schema:
             type: string
           style: simple
-        - description: 'Number of items per page (default: 10)'
-          explode: true
-          in: query
-          name: limit
-          required: false
-          schema:
-            type: number
-          style: form
-        - description: 'Page number (default: 1)'
+        - description: Page number of the results
           explode: true
           in: query
           name: page
           required: false
           schema:
+            default: 1
+            minimum: 1
+            type: number
+          style: form
+        - description: Number of results per page
+          explode: true
+          in: query
+          name: limit
+          required: false
+          schema:
+            default: 100
+            maximum: 200
+            minimum: 1
             type: number
           style: form
       responses:
@@ -6005,8 +7111,171 @@ paths:
       summary: Get audit logs for organization
       tags:
         - audit
+  /health:
+    get:
+      operationId: HealthController_check
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthController_check_200_response'
+          description: The Health Check is successful
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthController_check_503_response'
+          description: The Health Check is not successful
+      tags:
+        - Health
 components:
   schemas:
+    Announcement:
+      properties:
+        text:
+          description: The announcement text
+          example: New feature available!
+          type: string
+        learnMoreUrl:
+          description: URL to learn more about the announcement
+          example: https://example.com/learn-more
+          type: string
+      required:
+        - text
+      type: object
+    PosthogConfig:
+      properties:
+        apiKey:
+          description: PostHog API key
+          example: phc_abc123
+          type: string
+        host:
+          description: PostHog host URL
+          example: https://app.posthog.com
+          type: string
+      required:
+        - apiKey
+        - host
+      type: object
+    OidcConfig:
+      properties:
+        issuer:
+          description: OIDC issuer
+          example: https://auth.example.com
+          type: string
+        clientId:
+          description: OIDC client ID
+          example: daytona-client
+          type: string
+        audience:
+          description: OIDC audience
+          example: daytona-api
+          type: string
+      required:
+        - audience
+        - clientId
+        - issuer
+      type: object
+    DaytonaConfiguration:
+      example:
+        dashboardUrl: https://dashboard.example.com
+        sshGatewayPublicKey: ssh-gateway-public-key
+        billingApiUrl: https://billing.example.com
+        linkedAccountsEnabled: true
+        version: 0.0.1
+        oidc: ''
+        posthog: ''
+        maxAutoArchiveInterval: 43200
+        pylonAppId: pylon-app-123
+        proxyTemplateUrl: 'https://{{PORT}}-{{sandboxId}}.proxy.example.com'
+        maintananceMode: false
+        environment: production
+        defaultSnapshot: ubuntu:22.04
+        sshGatewayCommand: 'ssh -p 2222 {{TOKEN}}@localhost'
+        announcements:
+          feature-update:
+            text: New feature available!
+            learnMoreUrl: https://example.com
+      properties:
+        version:
+          description: Daytona version
+          example: 0.0.1
+          type: string
+        posthog:
+          allOf:
+            - $ref: '#/components/schemas/PosthogConfig'
+          description: PostHog configuration
+        oidc:
+          allOf:
+            - $ref: '#/components/schemas/OidcConfig'
+          description: OIDC configuration
+        linkedAccountsEnabled:
+          description: Whether linked accounts are enabled
+          example: true
+          type: boolean
+        announcements:
+          additionalProperties:
+            $ref: '#/components/schemas/Announcement'
+          description: System announcements
+          example:
+            feature-update:
+              text: New feature available!
+              learnMoreUrl: https://example.com
+          type: object
+        pylonAppId:
+          description: Pylon application ID
+          example: pylon-app-123
+          type: string
+        proxyTemplateUrl:
+          description: Proxy template URL
+          example: 'https://{{PORT}}-{{sandboxId}}.proxy.example.com'
+          type: string
+        defaultSnapshot:
+          description: Default snapshot for sandboxes
+          example: ubuntu:22.04
+          type: string
+        dashboardUrl:
+          description: Dashboard URL
+          example: https://dashboard.example.com
+          type: string
+        maxAutoArchiveInterval:
+          description: Maximum auto-archive interval in minutes
+          example: 43200
+          type: number
+        maintananceMode:
+          description: Whether maintenance mode is enabled
+          example: false
+          type: boolean
+        environment:
+          description: Current environment
+          example: production
+          type: string
+        billingApiUrl:
+          description: Billing API URL
+          example: https://billing.example.com
+          type: string
+        sshGatewayCommand:
+          description: SSH Gateway command
+          example: 'ssh -p 2222 {{TOKEN}}@localhost'
+          type: string
+        sshGatewayPublicKey:
+          description: Base64 encoded SSH Gateway public key
+          example: ssh-gateway-public-key
+          type: string
+      required:
+        - announcements
+        - dashboardUrl
+        - defaultSnapshot
+        - environment
+        - linkedAccountsEnabled
+        - maintananceMode
+        - maxAutoArchiveInterval
+        - oidc
+        - proxyTemplateUrl
+        - version
+      type: object
     CreateApiKey:
       example:
         permissions:
@@ -6108,6 +7377,7 @@ components:
           - write:registries
         name: My API Key
         value: bb_********************def
+        userId: '123'
         expiresAt: 2024-03-14T12:00:00Z
       properties:
         name:
@@ -6152,12 +7422,17 @@ components:
           format: date-time
           nullable: true
           type: string
+        userId:
+          description: The user ID of the user who created the API key
+          example: '123'
+          type: string
       required:
         - createdAt
         - expiresAt
         - lastUsedAt
         - name
         - permissions
+        - userId
         - value
       type: object
     OrganizationRole:
@@ -6329,6 +7604,7 @@ components:
         suspended: true
         createdAt: 2000-01-23T04:56:07.000+00:00
         maxCpuPerSandbox: 5.637376656633329
+        sandboxLimitedNetworkEgress: true
         suspendedUntil: 2000-01-23T04:56:07.000+00:00
         maxDiskPerSandbox: 7.061401241503109
         createdBy: createdBy
@@ -6394,6 +7670,9 @@ components:
         maxDiskPerSandbox:
           description: Max disk per sandbox
           type: number
+        sandboxLimitedNetworkEgress:
+          description: Sandbox default network block all
+          type: boolean
       required:
         - createdAt
         - createdBy
@@ -6403,6 +7682,7 @@ components:
         - maxMemoryPerSandbox
         - name
         - personal
+        - sandboxLimitedNetworkEgress
         - suspended
         - suspendedAt
         - suspendedUntil
@@ -6413,19 +7693,20 @@ components:
         - totalMemoryQuota
         - updatedAt
       type: object
-    UsageOverview:
+    OrganizationUsageOverview:
       example:
         totalCpuQuota: 0.8008281904610115
-        currentDiskUsage: 7.061401241503109
-        currentMemoryUsage: 2.3021358869347655
-        currentCpuUsage: 5.637376656633329
-        totalGpuQuota: 6.027456183070403
-        totalMemoryQuota: 1.4658129805029452
-        totalDiskQuota: 5.962133916683182
+        totalSnapshotQuota: 7.061401241503109
+        currentDiskUsage: 2.3021358869347655
+        currentVolumeUsage: 2.027123023002322
+        currentMemoryUsage: 5.637376656633329
+        currentCpuUsage: 5.962133916683182
+        totalVolumeQuota: 3.616076749251911
+        currentSnapshotUsage: 9.301444243932576
+        totalMemoryQuota: 6.027456183070403
+        totalDiskQuota: 1.4658129805029452
       properties:
         totalCpuQuota:
-          type: number
-        totalGpuQuota:
           type: number
         totalMemoryQuota:
           type: number
@@ -6437,14 +7718,25 @@ components:
           type: number
         currentDiskUsage:
           type: number
+        totalSnapshotQuota:
+          type: number
+        currentSnapshotUsage:
+          type: number
+        totalVolumeQuota:
+          type: number
+        currentVolumeUsage:
+          type: number
       required:
         - currentCpuUsage
         - currentDiskUsage
         - currentMemoryUsage
+        - currentSnapshotUsage
+        - currentVolumeUsage
         - totalCpuQuota
         - totalDiskQuota
-        - totalGpuQuota
         - totalMemoryQuota
+        - totalSnapshotQuota
+        - totalVolumeQuota
       type: object
     UpdateOrganizationQuota:
       example:
@@ -6516,6 +7808,16 @@ components:
         - reason
         - suspensionCleanupGracePeriodHours
         - until
+      type: object
+    OrganizationSandboxDefaultLimitedNetworkEgress:
+      example:
+        sandboxDefaultLimitedNetworkEgress: true
+      properties:
+        sandboxDefaultLimitedNetworkEgress:
+          description: Sandbox default limited network egress
+          type: boolean
+      required:
+        - sandboxDefaultLimitedNetworkEgress
       type: object
     CreateOrganizationRole:
       example:
@@ -6661,32 +7963,30 @@ components:
         - updatedAt
         - userId
       type: object
-    UpdateOrganizationMemberRole:
+    UpdateOrganizationMemberAccess:
       example:
-        role: owner
+        role: member
+        assignedRoleIds:
+          - assignedRoleIds
+          - assignedRoleIds
       properties:
         role:
+          default: member
           description: Organization member role
           enum:
             - owner
             - member
           type: string
-      required:
-        - role
-      type: object
-    UpdateAssignedOrganizationRoles:
-      example:
-        roleIds:
-          - roleIds
-          - roleIds
-      properties:
-        roleIds:
-          description: Array of role IDs
+        assignedRoleIds:
+          default:
+            - 00000000-0000-0000-0000-000000000001
+          description: Array of assigned role IDs
           items:
             type: string
           type: array
       required:
-        - roleIds
+        - assignedRoleIds
+        - role
       type: object
     CreateOrganizationInvitation:
       example:
@@ -7011,6 +8311,7 @@ components:
           daytona.io/public: 'true'
         target: local
         disk: 10
+        name: MySandbox
         backupState: None
         user: daytona
         autoArchiveInterval: 10080
@@ -7023,6 +8324,10 @@ components:
         organizationId:
           description: The organization ID of the sandbox
           example: organization123
+          type: string
+        name:
+          description: The name of the sandbox
+          example: MySandbox
           type: string
         snapshot:
           description: The snapshot used for the sandbox
@@ -7055,7 +8360,8 @@ components:
           example: false
           type: boolean
         networkAllowList:
-          description: Comma-separated list of allowed CIDR network addresses for the sandbox
+          description: Comma-separated list of allowed CIDR network addresses for
+            the sandbox
           example: '192.168.1.0/16,10.0.0.0/24'
           type: string
         target:
@@ -7161,11 +8467,118 @@ components:
         - id
         - labels
         - memory
+        - name
         - networkBlockAll
         - organizationId
         - public
         - target
         - user
+      type: object
+    PaginatedSandboxes:
+      example:
+        total: 0.8008281904610115
+        totalPages: 1.4658129805029452
+        page: 6.027456183070403
+        items:
+          - memory: 4
+            buildInfo: ''
+            autoStopInterval: 30
+            organizationId: organization123
+            createdAt: 2024-10-01T12:00:00Z
+            networkBlockAll: false
+            autoDeleteInterval: 30
+            public: false
+            errorReason: The sandbox is not running
+            runnerDomain: runner.example.com
+            id: sandbox123
+            state: creating
+            class: small
+            updatedAt: 2024-10-01T12:00:00Z
+            desiredState: destroyed
+            networkAllowList: '192.168.1.0/16,10.0.0.0/24'
+            volumes:
+              - mountPath: /data
+                volumeId: volume123
+              - mountPath: /data
+                volumeId: volume123
+            cpu: 2
+            env:
+              NODE_ENV: production
+            gpu: 0
+            daemonVersion: 1.0.0
+            backupCreatedAt: 2024-10-01T12:00:00Z
+            labels:
+              daytona.io/public: 'true'
+            target: local
+            disk: 10
+            name: MySandbox
+            backupState: None
+            user: daytona
+            autoArchiveInterval: 10080
+            snapshot: daytonaio/sandbox:latest
+          - memory: 4
+            buildInfo: ''
+            autoStopInterval: 30
+            organizationId: organization123
+            createdAt: 2024-10-01T12:00:00Z
+            networkBlockAll: false
+            autoDeleteInterval: 30
+            public: false
+            errorReason: The sandbox is not running
+            runnerDomain: runner.example.com
+            id: sandbox123
+            state: creating
+            class: small
+            updatedAt: 2024-10-01T12:00:00Z
+            desiredState: destroyed
+            networkAllowList: '192.168.1.0/16,10.0.0.0/24'
+            volumes:
+              - mountPath: /data
+                volumeId: volume123
+              - mountPath: /data
+                volumeId: volume123
+            cpu: 2
+            env:
+              NODE_ENV: production
+            gpu: 0
+            daemonVersion: 1.0.0
+            backupCreatedAt: 2024-10-01T12:00:00Z
+            labels:
+              daytona.io/public: 'true'
+            target: local
+            disk: 10
+            name: MySandbox
+            backupState: None
+            user: daytona
+            autoArchiveInterval: 10080
+            snapshot: daytonaio/sandbox:latest
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Sandbox'
+          type: array
+        total:
+          type: number
+        page:
+          type: number
+        totalPages:
+          type: number
+      required:
+        - items
+        - page
+        - total
+        - totalPages
+      type: object
+    Region:
+      example:
+        name: us
+      properties:
+        name:
+          description: Region name
+          example: us
+          type: string
+      required:
+        - name
       type: object
     CreateBuildInfo:
       properties:
@@ -7211,11 +8624,17 @@ components:
         disk: 3
         autoDeleteInterval: 30
         public: false
+        name: MySandbox
         user: daytona
         class: small
         autoArchiveInterval: 10080
         snapshot: ubuntu-4vcpu-8ram-100gb
       properties:
+        name:
+          description: "The name of the sandbox. If not provided, the sandbox ID will\
+            \ be used as the name"
+          example: MySandbox
+          type: string
         snapshot:
           description: The ID or name of the snapshot used for the sandbox
           example: ubuntu-4vcpu-8ram-100gb
@@ -7247,7 +8666,8 @@ components:
           example: false
           type: boolean
         networkAllowList:
-          description: Comma-separated list of allowed CIDR network addresses for the sandbox
+          description: Comma-separated list of allowed CIDR network addresses for
+            the sandbox
           example: '192.168.1.0/16,10.0.0.0/24'
           type: string
         class:
@@ -7319,12 +8739,45 @@ components:
       required:
         - labels
       type: object
+    UpdateSandboxStateDto:
+      example:
+        state: started
+      properties:
+        state:
+          description: The new state for the sandbox
+          enum:
+            - creating
+            - restoring
+            - destroyed
+            - destroying
+            - started
+            - stopped
+            - starting
+            - stopping
+            - error
+            - build_failed
+            - pending_build
+            - building_snapshot
+            - unknown
+            - pulling_snapshot
+            - archived
+            - archiving
+          example: started
+          type: string
+      required:
+        - state
+      type: object
     PortPreviewUrl:
       example:
+        sandboxId: '123456'
         url: https://123456-mysandbox.runner.com
         legacyProxyUrl: https://3000-mysandbox.runner.com
         token: ul67qtv-jl6wb9z5o3eii-ljqt9qed6l
       properties:
+        sandboxId:
+          description: ID of the sandbox
+          example: '123456'
+          type: string
         url:
           description: Preview url
           example: https://123456-mysandbox.runner.com
@@ -7338,23 +8791,94 @@ components:
           example: https://3000-mysandbox.runner.com
           type: string
       required:
+        - sandboxId
         - token
         - url
+      type: object
+    SshAccessDto:
+      example:
+        createdAt: 2025-01-01T11:00:00Z
+        sandboxId: 123e4567-e89b-12d3-a456-426614174000
+        id: 123e4567-e89b-12d3-a456-426614174000
+        expiresAt: 2025-01-01T12:00:00Z
+        token: abc123def456ghi789jkl012mno345pqr678stu901vwx234yz
+        updatedAt: 2025-01-01T11:00:00Z
+      properties:
+        id:
+          description: Unique identifier for the SSH access
+          example: 123e4567-e89b-12d3-a456-426614174000
+          type: string
+        sandboxId:
+          description: ID of the sandbox this SSH access is for
+          example: 123e4567-e89b-12d3-a456-426614174000
+          type: string
+        token:
+          description: SSH access token
+          example: abc123def456ghi789jkl012mno345pqr678stu901vwx234yz
+          type: string
+        expiresAt:
+          description: When the SSH access expires
+          example: 2025-01-01T12:00:00Z
+          format: date-time
+          type: string
+        createdAt:
+          description: When the SSH access was created
+          example: 2025-01-01T11:00:00Z
+          format: date-time
+          type: string
+        updatedAt:
+          description: When the SSH access was last updated
+          example: 2025-01-01T11:00:00Z
+          format: date-time
+          type: string
+      required:
+        - createdAt
+        - expiresAt
+        - id
+        - sandboxId
+        - token
+        - updatedAt
+      type: object
+    SshAccessValidationDto:
+      example:
+        valid: true
+        sandboxId: 123e4567-e89b-12d3-a456-426614174000
+        runnerDomain: runner-1.example.com
+        runnerId: 123e4567-e89b-12d3-a456-426614174000
+      properties:
+        valid:
+          description: Whether the SSH access token is valid
+          example: true
+          type: boolean
+        sandboxId:
+          description: ID of the sandbox this SSH access is for
+          example: 123e4567-e89b-12d3-a456-426614174000
+          type: string
+        runnerId:
+          description: ID of the runner hosting the sandbox
+          example: 123e4567-e89b-12d3-a456-426614174000
+          type: string
+        runnerDomain:
+          description: Domain of the runner hosting the sandbox
+          example: runner-1.example.com
+          type: string
+      required:
+        - sandboxId
+        - valid
       type: object
     CreateRunner:
       example:
         diskGiB: 1.4658129805029452
+        apiUrl: apiUrl
         apiKey: apiKey
         proxyUrl: proxyUrl
-        cpu: 0.8008281904610115
-        gpu: 5.962133916683182
-        version: version
-        capacity: 5.637376656633329
-        apiUrl: apiUrl
         memoryGiB: 6.027456183070403
         domain: domain
+        cpu: 0.8008281904610115
         region: us
+        gpu: 5.962133916683182
         class: small
+        version: version
         gpuType: gpuType
       properties:
         domain:
@@ -7382,8 +8906,6 @@ components:
             - large
           example: small
           type: string
-        capacity:
-          type: number
         region:
           example: us
           type: string
@@ -7392,7 +8914,6 @@ components:
       required:
         - apiKey
         - apiUrl
-        - capacity
         - class
         - cpu
         - diskGiB
@@ -7426,8 +8947,6 @@ components:
         apiKey: api-key-123
         currentMemoryUsagePercentage: 68.2
         availabilityScore: 85
-        used: 2
-        capacity: 10
         currentDiskUsagePercentage: 33.8
         currentCpuUsagePercentage: 45.6
         createdAt: 2023-10-01T12:00:00Z
@@ -7495,14 +9014,6 @@ components:
             - $ref: '#/components/schemas/SandboxClass'
           description: The class of the runner
           example: small
-        used:
-          description: The current usage of the runner
-          example: 2
-          type: number
-        capacity:
-          description: The capacity of the runner
-          example: 10
-          type: number
         currentCpuUsagePercentage:
           description: Current CPU usage percentage
           example: 45.6
@@ -7567,7 +9078,6 @@ components:
       required:
         - apiKey
         - apiUrl
-        - capacity
         - class
         - cpu
         - createdAt
@@ -7582,7 +9092,6 @@ components:
         - state
         - unschedulable
         - updatedAt
-        - used
         - version
       type: object
     RunnerSnapshotDto:
@@ -7609,6 +9118,20 @@ components:
         - runnerSnapshotId
       type: object
     ProjectDirResponse:
+      example:
+        dir: dir
+      properties:
+        dir:
+          type: string
+      type: object
+    UserHomeDirResponse:
+      example:
+        dir: dir
+      properties:
+        dir:
+          type: string
+      type: object
+    WorkDirResponse:
       example:
         dir: dir
       properties:
@@ -7651,6 +9174,20 @@ components:
         - owner
         - permissions
         - size
+      type: object
+    DownloadFiles:
+      example:
+        paths:
+          - paths
+          - paths
+      properties:
+        paths:
+          description: List of remote file paths to download
+          items:
+            type: string
+          type: array
+      required:
+        - paths
       type: object
     Match:
       example:
@@ -8078,7 +9615,8 @@ components:
           example: cmd-123
           type: string
         output:
-          description: The output of the executed command
+          description: The output of the executed command marked with stdout and stderr
+            prefixes
           example: |-
             total 20
             drwxr-xr-x  4 user group  128 Mar 15 10:30 .
@@ -8087,6 +9625,169 @@ components:
           description: The exit code of the executed command
           example: 0
           type: number
+      type: object
+    PtySessionInfo:
+      example:
+        cwd: /home/user
+        createdAt: 2024-01-15T10:30:45Z
+        lazyStart: false
+        envs:
+          TERM: xterm-256color
+          PS1: '\u@daytona:\w$ '
+        active: true
+        id: pty-session-12345
+        rows: 24
+        cols: 80
+      properties:
+        id:
+          description: The unique identifier for the PTY session
+          example: pty-session-12345
+          type: string
+        cwd:
+          description: "Starting directory for the PTY session, defaults to the sandbox's\
+            \ working directory"
+          example: /home/user
+          type: string
+        envs:
+          description: Environment variables for the PTY session
+          example:
+            TERM: xterm-256color
+            PS1: '\u@daytona:\w$ '
+          type: object
+        cols:
+          description: Number of terminal columns
+          example: 80
+          type: number
+        rows:
+          description: Number of terminal rows
+          example: 24
+          type: number
+        createdAt:
+          description: When the PTY session was created
+          example: 2024-01-15T10:30:45Z
+          type: string
+        active:
+          description: Whether the PTY session is currently active
+          example: true
+          type: boolean
+        lazyStart:
+          default: false
+          description: Whether the PTY session uses lazy start (only start when first
+            client connects)
+          example: false
+          type: boolean
+      required:
+        - active
+        - cols
+        - createdAt
+        - cwd
+        - envs
+        - id
+        - lazyStart
+        - rows
+      type: object
+    PtyListResponse:
+      example:
+        sessions:
+          - cwd: /home/user
+            createdAt: 2024-01-15T10:30:45Z
+            lazyStart: false
+            envs:
+              TERM: xterm-256color
+              PS1: '\u@daytona:\w$ '
+            active: true
+            id: pty-session-12345
+            rows: 24
+            cols: 80
+          - cwd: /home/user
+            createdAt: 2024-01-15T10:30:45Z
+            lazyStart: false
+            envs:
+              TERM: xterm-256color
+              PS1: '\u@daytona:\w$ '
+            active: true
+            id: pty-session-12345
+            rows: 24
+            cols: 80
+      properties:
+        sessions:
+          description: List of active PTY sessions
+          items:
+            $ref: '#/components/schemas/PtySessionInfo'
+          type: array
+      required:
+        - sessions
+      type: object
+    PtyCreateRequest:
+      example:
+        cwd: /home/user
+        lazyStart: false
+        envs:
+          TERM: xterm-256color
+          PS1: '\u@daytona:\w$ '
+        id: pty-session-12345
+        rows: 24
+        cols: 80
+      properties:
+        id:
+          description: The unique identifier for the PTY session
+          example: pty-session-12345
+          type: string
+        cwd:
+          description: "Starting directory for the PTY session, defaults to the sandbox's\
+            \ working directory"
+          example: /home/user
+          type: string
+        envs:
+          description: Environment variables for the PTY session
+          example:
+            TERM: xterm-256color
+            PS1: '\u@daytona:\w$ '
+          type: object
+        cols:
+          description: Number of terminal columns
+          example: 80
+          type: number
+        rows:
+          description: Number of terminal rows
+          example: 24
+          type: number
+        lazyStart:
+          default: false
+          description: Whether to start the PTY session lazily (only start when first
+            client connects)
+          example: false
+          type: boolean
+      required:
+        - id
+      type: object
+    PtyCreateResponse:
+      example:
+        sessionId: pty-session-12345
+      properties:
+        sessionId:
+          description: The unique identifier for the created PTY session
+          example: pty-session-12345
+          type: string
+      required:
+        - sessionId
+      type: object
+    PtyResizeRequest:
+      example:
+        rows: 24
+        cols: 80
+      properties:
+        cols:
+          description: Number of terminal columns
+          example: 80
+          type: number
+        rows:
+          description: Number of terminal rows
+          example: 24
+          type: number
+      required:
+        - cols
+        - rows
       type: object
     Position:
       example:
@@ -9000,7 +10701,7 @@ components:
         - state
         - updatedAt
       type: object
-    PaginatedSnapshotsDto:
+    PaginatedSnapshots:
       example:
         total: 2.3021358869347655
         totalPages: 9.301444243932576
@@ -9129,7 +10830,7 @@ components:
           daytona.io/public: 'true'
         target: local
         disk: 10
-        name: MyWorkspace
+        name: MySandbox
         backupState: None
         user: daytona
         autoArchiveInterval: 10080
@@ -9142,6 +10843,10 @@ components:
         organizationId:
           description: The organization ID of the sandbox
           example: organization123
+          type: string
+        name:
+          description: The name of the sandbox
+          example: MySandbox
           type: string
         snapshot:
           description: The snapshot used for the sandbox
@@ -9174,7 +10879,8 @@ components:
           example: false
           type: boolean
         networkAllowList:
-          description: Comma-separated list of allowed CIDR network addresses for the sandbox
+          description: Comma-separated list of allowed CIDR network addresses for
+            the sandbox
           example: '192.168.1.0/16,10.0.0.0/24'
           type: string
         target:
@@ -9271,11 +10977,6 @@ components:
         daemonVersion:
           description: The version of the daemon running in the sandbox
           example: 1.0.0
-          type: string
-        name:
-          default: ''
-          description: The name of the workspace
-          example: MyWorkspace
           type: string
         image:
           description: The image used for the workspace
@@ -9415,6 +11116,28 @@ components:
             - $ref: '#/components/schemas/CreateBuildInfo'
           description: Build information for the workspace
       type: object
+    WorkspacePortPreviewUrl:
+      example:
+        url: https://123456-mysandbox.runner.com
+        legacyProxyUrl: https://3000-mysandbox.runner.com
+        token: ul67qtv-jl6wb9z5o3eii-ljqt9qed6l
+      properties:
+        url:
+          description: Preview url
+          example: https://123456-mysandbox.runner.com
+          type: string
+        token:
+          description: Access token
+          example: ul67qtv-jl6wb9z5o3eii-ljqt9qed6l
+          type: string
+        legacyProxyUrl:
+          description: Legacy preview url using runner domain
+          example: https://3000-mysandbox.runner.com
+          type: string
+      required:
+        - token
+        - url
+      type: object
     VolumeState:
       description: Volume state
       enum:
@@ -9521,8 +11244,8 @@ components:
           enum:
             - internal
             - organization
-            - public
             - transient
+            - backup
           type: string
         isDefault:
           description: Set as default registry
@@ -9570,8 +11293,8 @@ components:
           enum:
             - internal
             - organization
-            - public
             - transient
+            - backup
           example: internal
           type: string
         createdAt:
@@ -9662,6 +11385,86 @@ components:
         - name
         - url
         - username
+      type: object
+    WebhookAppPortalAccess:
+      example:
+        url: https://app.svix.com/app_1234567890
+      properties:
+        url:
+          description: The URL to the webhook app portal
+          example: https://app.svix.com/app_1234567890
+          type: string
+      required:
+        - url
+      type: object
+    SendWebhookDto:
+      example:
+        eventId: evt_1234567890abcdef
+        payload:
+          id: sandbox-123
+          name: My Sandbox
+        eventType: sandbox.created
+      properties:
+        eventType:
+          description: The type of event being sent
+          example: sandbox.created
+          type: string
+        payload:
+          description: The payload data to send
+          example:
+            id: sandbox-123
+            name: My Sandbox
+          type: object
+        eventId:
+          description: Optional event ID for idempotency
+          example: evt_1234567890abcdef
+          type: string
+      required:
+        - eventType
+        - payload
+      type: object
+    WebhookInitializationStatus:
+      example:
+        organizationId: 123e4567-e89b-12d3-a456-426614174000
+        createdAt: 2023-01-01T00:00:00.000Z
+        lastError: Failed to create Svix application
+        retryCount: 3
+        svixApplicationId: app_1234567890
+        updatedAt: 2023-01-01T00:00:00.000Z
+      properties:
+        organizationId:
+          description: Organization ID
+          example: 123e4567-e89b-12d3-a456-426614174000
+          type: string
+        svixApplicationId:
+          description: The ID of the Svix application
+          example: app_1234567890
+          nullable: true
+          type: string
+        lastError:
+          description: The error reason for the last initialization attempt
+          example: Failed to create Svix application
+          nullable: true
+          type: string
+        retryCount:
+          description: The number of times the initialization has been attempted
+          example: 3
+          type: number
+        createdAt:
+          description: When the webhook initialization was created
+          example: 2023-01-01T00:00:00.000Z
+          type: string
+        updatedAt:
+          description: When the webhook initialization was last updated
+          example: 2023-01-01T00:00:00.000Z
+          type: string
+      required:
+        - createdAt
+        - lastError
+        - organizationId
+        - retryCount
+        - svixApplicationId
+        - updatedAt
       type: object
     StorageAccessDto:
       example:
@@ -9835,8 +11638,7 @@ components:
             - delete
             - login
             - set_default
-            - update_role
-            - update_assigned_roles
+            - update_access
             - update_quota
             - suspend
             - unsuspend
@@ -9861,6 +11663,10 @@ components:
             - activate
             - deactivate
             - update_network_settings
+            - get_webhook_app_portal_access
+            - send_webhook_message
+            - initialize_webhooks
+            - update_sandbox_default_limited_network_egress
             - toolbox_delete_file
             - toolbox_download_file
             - toolbox_create_folder
@@ -9911,6 +11717,105 @@ components:
         file:
           format: binary
           type: string
+      type: object
+    WebhookController_getStatus_200_response:
+      example:
+        enabled: true
+      properties:
+        enabled:
+          type: boolean
+      type: object
+    HealthController_check_200_response_info_value:
+      additionalProperties: true
+      properties:
+        status:
+          type: string
+      required:
+        - status
+      type: object
+    HealthController_check_200_response:
+      example:
+        details:
+          database:
+            status: up
+        error: {}
+        status: ok
+        info:
+          database:
+            status: up
+      properties:
+        status:
+          example: ok
+          type: string
+        info:
+          additionalProperties:
+            $ref: '#/components/schemas/HealthController_check_200_response_info_value'
+          example:
+            database:
+              status: up
+          nullable: true
+          type: object
+        error:
+          additionalProperties:
+            $ref: '#/components/schemas/HealthController_check_200_response_info_value'
+          example: {}
+          nullable: true
+          type: object
+        details:
+          additionalProperties:
+            $ref: '#/components/schemas/HealthController_check_200_response_info_value'
+          example:
+            database:
+              status: up
+          type: object
+      type: object
+    HealthController_check_503_response:
+      example:
+        details:
+          database:
+            status: up
+          redis:
+            status: down
+            message: Could not connect
+        error:
+          redis:
+            status: down
+            message: Could not connect
+        status: error
+        info:
+          database:
+            status: up
+      properties:
+        status:
+          example: error
+          type: string
+        info:
+          additionalProperties:
+            $ref: '#/components/schemas/HealthController_check_200_response_info_value'
+          example:
+            database:
+              status: up
+          nullable: true
+          type: object
+        error:
+          additionalProperties:
+            $ref: '#/components/schemas/HealthController_check_200_response_info_value'
+          example:
+            redis:
+              status: down
+              message: Could not connect
+          nullable: true
+          type: object
+        details:
+          additionalProperties:
+            $ref: '#/components/schemas/HealthController_check_200_response_info_value'
+          example:
+            database:
+              status: up
+            redis:
+              status: down
+              message: Could not connect
+          type: object
       type: object
   securitySchemes:
     bearer:

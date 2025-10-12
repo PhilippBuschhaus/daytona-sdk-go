@@ -12,7 +12,6 @@ Contact: support@daytona.com
 package apiclient
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 )
@@ -22,12 +21,15 @@ var _ MappedNullable = &PortPreviewUrl{}
 
 // PortPreviewUrl struct for PortPreviewUrl
 type PortPreviewUrl struct {
+	// ID of the sandbox
+	SandboxId string `json:"sandboxId"`
 	// Preview url
 	Url string `json:"url"`
 	// Access token
 	Token string `json:"token"`
 	// Legacy preview url using runner domain
-	LegacyProxyUrl *string `json:"legacyProxyUrl,omitempty"`
+	LegacyProxyUrl       *string `json:"legacyProxyUrl,omitempty"`
+	AdditionalProperties map[string]interface{}
 }
 
 type _PortPreviewUrl PortPreviewUrl
@@ -36,8 +38,9 @@ type _PortPreviewUrl PortPreviewUrl
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPortPreviewUrl(url string, token string) *PortPreviewUrl {
+func NewPortPreviewUrl(sandboxId string, url string, token string) *PortPreviewUrl {
 	this := PortPreviewUrl{}
+	this.SandboxId = sandboxId
 	this.Url = url
 	this.Token = token
 	return &this
@@ -49,6 +52,30 @@ func NewPortPreviewUrl(url string, token string) *PortPreviewUrl {
 func NewPortPreviewUrlWithDefaults() *PortPreviewUrl {
 	this := PortPreviewUrl{}
 	return &this
+}
+
+// GetSandboxId returns the SandboxId field value
+func (o *PortPreviewUrl) GetSandboxId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.SandboxId
+}
+
+// GetSandboxIdOk returns a tuple with the SandboxId field value
+// and a boolean to check if the value has been set.
+func (o *PortPreviewUrl) GetSandboxIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.SandboxId, true
+}
+
+// SetSandboxId sets field value
+func (o *PortPreviewUrl) SetSandboxId(v string) {
+	o.SandboxId = v
 }
 
 // GetUrl returns the Url field value
@@ -141,11 +168,17 @@ func (o PortPreviewUrl) MarshalJSON() ([]byte, error) {
 
 func (o PortPreviewUrl) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
+	toSerialize["sandboxId"] = o.SandboxId
 	toSerialize["url"] = o.Url
 	toSerialize["token"] = o.Token
 	if !IsNil(o.LegacyProxyUrl) {
 		toSerialize["legacyProxyUrl"] = o.LegacyProxyUrl
 	}
+
+	for key, value := range o.AdditionalProperties {
+		toSerialize[key] = value
+	}
+
 	return toSerialize, nil
 }
 
@@ -154,6 +187,7 @@ func (o *PortPreviewUrl) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
+		"sandboxId",
 		"url",
 		"token",
 	}
@@ -174,15 +208,23 @@ func (o *PortPreviewUrl) UnmarshalJSON(data []byte) (err error) {
 
 	varPortPreviewUrl := _PortPreviewUrl{}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varPortPreviewUrl)
+	err = json.Unmarshal(data, &varPortPreviewUrl)
 
 	if err != nil {
 		return err
 	}
 
 	*o = PortPreviewUrl(varPortPreviewUrl)
+
+	additionalProperties := make(map[string]interface{})
+
+	if err = json.Unmarshal(data, &additionalProperties); err == nil {
+		delete(additionalProperties, "sandboxId")
+		delete(additionalProperties, "url")
+		delete(additionalProperties, "token")
+		delete(additionalProperties, "legacyProxyUrl")
+		o.AdditionalProperties = additionalProperties
+	}
 
 	return err
 }

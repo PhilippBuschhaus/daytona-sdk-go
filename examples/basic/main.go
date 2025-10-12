@@ -38,7 +38,7 @@ func main() {
 	// Most fields are optional - only Target is typically required
 	createReq := &daytona.CreateSandboxRequest{
 		Target: daytona.StringPtr("eu"), // Required: deployment region (eu, us, etc.)
-		
+
 		// Optional fields (uncomment to use):
 		// User:     daytona.StringPtr("daytona"),           // Defaults to account default
 		// Snapshot: daytona.StringPtr("daytonaio/sandbox:0.4.3"), // Defaults to latest
@@ -115,7 +115,7 @@ func main() {
 
 	// Clean up
 	fmt.Println("\nCleaning up...")
-	err = client.DeleteSandbox(ctx, sandbox.GetId(), true)
+	err = client.DeleteSandbox(ctx, sandbox.GetId())
 	if err != nil {
 		log.Printf("Failed to delete sandbox: %v\n", err)
 	} else {

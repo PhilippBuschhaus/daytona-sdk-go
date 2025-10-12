@@ -24,13 +24,13 @@ type CreateSandboxRequest struct {
 	AutoStopInterval    *int32
 	AutoArchiveInterval *int32
 	AutoDeleteInterval  *int32
-	DockerfileContent   *string  // For custom Dockerfile builds
+	DockerfileContent   *string // For custom Dockerfile builds
 }
 
 // ToAPI converts to the API model
 func (r *CreateSandboxRequest) ToAPI() api.CreateSandbox {
 	req := api.CreateSandbox{}
-	
+
 	if r.Snapshot != nil {
 		req.Snapshot = r.Snapshot
 	}
@@ -77,7 +77,7 @@ func (r *CreateSandboxRequest) ToAPI() api.CreateSandbox {
 		buildInfo := api.NewCreateBuildInfo(*r.DockerfileContent)
 		req.BuildInfo = buildInfo
 	}
-	
+
 	return req
 }
 
@@ -86,14 +86,14 @@ func (c *Client) CreateSandbox(ctx context.Context, req *CreateSandboxRequest) (
 	if req == nil {
 		return nil, fmt.Errorf("request is required")
 	}
-	
+
 	apiReq := req.ToAPI()
-	
+
 	resp, _, err := c.apiClient.SandboxAPI.CreateSandbox(ctx).CreateSandbox(apiReq).Execute()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create sandbox: %w", err)
 	}
-	
+
 	return resp, nil
 }
 
@@ -102,12 +102,12 @@ func (c *Client) GetSandbox(ctx context.Context, sandboxID string) (*api.Sandbox
 	if sandboxID == "" {
 		return nil, fmt.Errorf("sandbox ID is required")
 	}
-	
+
 	resp, _, err := c.apiClient.SandboxAPI.GetSandbox(ctx, sandboxID).Execute()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get sandbox: %w", err)
 	}
-	
+
 	return resp, nil
 }
 
@@ -117,7 +117,7 @@ func (c *Client) ListSandboxes(ctx context.Context) ([]api.Sandbox, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to list sandboxes: %w", err)
 	}
-	
+
 	return resp, nil
 }
 
@@ -126,12 +126,12 @@ func (c *Client) StartSandbox(ctx context.Context, sandboxID string) (*api.Sandb
 	if sandboxID == "" {
 		return nil, fmt.Errorf("sandbox ID is required")
 	}
-	
+
 	resp, _, err := c.apiClient.SandboxAPI.StartSandbox(ctx, sandboxID).Execute()
 	if err != nil {
 		return nil, fmt.Errorf("failed to start sandbox: %w", err)
 	}
-	
+
 	return resp, nil
 }
 
@@ -140,31 +140,28 @@ func (c *Client) StopSandbox(ctx context.Context, sandboxID string) error {
 	if sandboxID == "" {
 		return fmt.Errorf("sandbox ID is required")
 	}
-	
-	_, err := c.apiClient.SandboxAPI.StopSandbox(ctx, sandboxID).Execute()
+
+	_, _, err := c.apiClient.SandboxAPI.StopSandbox(ctx, sandboxID).Execute()
 	if err != nil {
 		return fmt.Errorf("failed to stop sandbox: %w", err)
 	}
-	
+
 	return nil
 }
 
 // DeleteSandbox deletes a sandbox
-func (c *Client) DeleteSandbox(ctx context.Context, sandboxID string, force bool) error {
+func (c *Client) DeleteSandbox(ctx context.Context, sandboxID string) error {
 	if sandboxID == "" {
 		return fmt.Errorf("sandbox ID is required")
 	}
-	
+
 	req := c.apiClient.SandboxAPI.DeleteSandbox(ctx, sandboxID)
-	if force {
-		req = req.Force(force)
-	}
-	
-	_, err := req.Execute()
+
+	_, _, err := req.Execute()
 	if err != nil {
 		return fmt.Errorf("failed to delete sandbox: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -173,12 +170,12 @@ func (c *Client) ArchiveSandbox(ctx context.Context, sandboxID string) error {
 	if sandboxID == "" {
 		return fmt.Errorf("sandbox ID is required")
 	}
-	
-	_, err := c.apiClient.SandboxAPI.ArchiveSandbox(ctx, sandboxID).Execute()
+
+	_, _, err := c.apiClient.SandboxAPI.ArchiveSandbox(ctx, sandboxID).Execute()
 	if err != nil {
 		return fmt.Errorf("failed to archive sandbox: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -187,7 +184,7 @@ func (c *Client) WaitForSandboxReady(ctx context.Context, sandboxID string, time
 	deadline := time.Now().Add(timeout)
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
-	
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -196,12 +193,12 @@ func (c *Client) WaitForSandboxReady(ctx context.Context, sandboxID string, time
 			if time.Now().After(deadline) {
 				return nil, fmt.Errorf("timeout waiting for sandbox to be ready")
 			}
-			
+
 			sandbox, err := c.GetSandbox(ctx, sandboxID)
 			if err != nil {
 				return nil, err
 			}
-			
+
 			if sandbox.State != nil {
 				state := *sandbox.State
 				if state == api.SANDBOXSTATE_STARTED {
@@ -217,5 +214,5 @@ func (c *Client) WaitForSandboxReady(ctx context.Context, sandboxID string, time
 
 // Helper functions for creating pointers
 func StringPtr(s string) *string { return &s }
-func IntPtr(i int32) *int32 { return &i }
-func BoolPtr(b bool) *bool { return &b }
+func IntPtr(i int32) *int32      { return &i }
+func BoolPtr(b bool) *bool       { return &b }

@@ -41,7 +41,7 @@ func main() {
 	} else {
 		fmt.Printf("✓ Successfully connected to API\n")
 		fmt.Printf("✓ Found %d sandboxes\n", len(sandboxes))
-		
+
 		for i, sandbox := range sandboxes {
 			fmt.Printf("\nSandbox %d:\n", i+1)
 			fmt.Printf("  ID: %s\n", sandbox.GetId())
@@ -55,28 +55,28 @@ func main() {
 
 	// Try creating a simple sandbox
 	fmt.Println("\nAttempting to create a sandbox...")
-	
+
 	// Helper function to get pointer to a value
 	strPtr := func(s string) *string { return &s }
 	intPtr := func(i int32) *int32 { return &i }
 	boolPtr := func(b bool) *bool { return &b }
-	
+
 	envVars := map[string]string{
 		"TEST": "true",
 	}
 	labels := map[string]string{
 		"created_by": "go_sdk",
-		"test": "true",
+		"test":       "true",
 	}
-	
+
 	createReq := api.CreateSandbox{
-		User: strPtr("sdk-test"),
+		User:   strPtr("sdk-test"),
 		Target: strPtr("ubuntu:latest"),
-		Cpu: intPtr(1),
+		Cpu:    intPtr(1),
 		Memory: intPtr(2048),
-		Disk: intPtr(10240),
+		Disk:   intPtr(10240),
 		Public: boolPtr(false),
-		Env: &envVars,
+		Env:    &envVars,
 		Labels: &labels,
 	}
 
@@ -90,10 +90,10 @@ func main() {
 		fmt.Printf("✓ Sandbox created successfully!\n")
 		fmt.Printf("  ID: %s\n", newSandbox.GetId())
 		fmt.Printf("  User: %s\n", newSandbox.GetUser())
-		
+
 		// Clean up - delete the sandbox
 		fmt.Printf("\nDeleting sandbox %s...\n", newSandbox.GetId())
-		resp, err := sandboxAPI.DeleteSandbox(ctx, newSandbox.GetId()).Execute()
+		_, resp, err := sandboxAPI.DeleteSandbox(ctx, newSandbox.GetId()).Execute()
 		if err != nil {
 			if resp != nil {
 				fmt.Printf("API Error - Status: %d\n", resp.StatusCode)

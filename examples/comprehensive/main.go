@@ -45,23 +45,23 @@ func main() {
 	fmt.Println("\nCreating a new sandbox...")
 	createReq := &daytona.CreateSandboxRequest{
 		Target: daytona.StringPtr("eu"), // Required: deployment region
-		
+
 		// Optional: Environment variables
 		Env: map[string]string{
 			"NODE_ENV":    "development",
 			"DEBUG":       "true",
 			"API_VERSION": "v1",
 		},
-		
+
 		// Optional: Metadata labels
 		Labels: map[string]string{
 			"project":     "sdk-demo",
 			"environment": "development",
 		},
-		
+
 		// Optional: Auto-stop configuration
 		AutoStopInterval: daytona.IntPtr(30), // Stop after 30 minutes of inactivity
-		
+
 		// Other optional fields:
 		// User:     daytona.StringPtr("daytona"),           // Defaults to account default
 		// Snapshot: daytona.StringPtr("daytonaio/sandbox:0.4.3"), // Defaults to latest
@@ -216,7 +216,7 @@ clean:
 
 	sessionID := fmt.Sprintf("session-%d", time.Now().Unix())
 	fmt.Printf("Creating session %s...\n", sessionID)
-	
+
 	err = client.CreateSession(ctx, sandboxID, sessionID)
 	if err != nil {
 		log.Printf("Failed to create session: %v\n", err)
@@ -298,7 +298,7 @@ clean:
 
 	// Delete sandbox
 	fmt.Println("Deleting sandbox...")
-	err = client.DeleteSandbox(ctx, sandboxID, true) // force delete
+	err = client.DeleteSandbox(ctx, sandboxID) // force delete
 	if err != nil {
 		log.Printf("Failed to delete sandbox: %v\n", err)
 	} else {

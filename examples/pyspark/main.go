@@ -35,7 +35,7 @@ func main() {
 		PipInstall([]string{
 			"pyspark==3.5.0",
 			"pandas",
-			"numpy", 
+			"numpy",
 			"pyarrow",
 			"matplotlib",
 			"seaborn",
@@ -45,11 +45,11 @@ func main() {
 	fmt.Println("Creating sandbox with pre-installed PySpark...")
 	fmt.Println("This will build a custom image with all dependencies pre-installed.")
 	fmt.Println("Initial build may take a few minutes, but subsequent uses will be faster.\n")
-	
+
 	createReq := &daytona.CreateSandboxRequest{
-		Target:            daytona.StringPtr("eu"), // Required: deployment region
+		Target:            daytona.StringPtr("eu"),          // Required: deployment region
 		DockerfileContent: daytona.StringPtr(image.Build()), // Custom image with PySpark
-		
+
 		// Optional: Labels for organization
 		Labels: map[string]string{
 			"example": "pyspark",
@@ -101,7 +101,7 @@ func main() {
 	execReq := &daytona.ExecuteCommandRequest{
 		Command: "python3 /tmp/analysis.py 2>&1",
 		Cwd:     "/tmp",
-		Timeout: 120.0,  // Give more time for Spark operations
+		Timeout: 120.0, // Give more time for Spark operations
 	}
 
 	execResp, err := client.ExecuteCommand(ctx, sandboxID, execReq)
@@ -114,7 +114,7 @@ func main() {
 
 	// Read generated files
 	fmt.Println("\n=== Generated Files ===")
-	
+
 	// Read sales summary
 	summaryData, err := client.ReadFile(ctx, sandboxID, "/tmp/sales_summary.csv")
 	if err != nil {
@@ -139,7 +139,7 @@ func main() {
 
 	// Clean up
 	fmt.Println("\nCleaning up...")
-	err = client.DeleteSandbox(ctx, sandboxID, true)
+	err = client.DeleteSandbox(ctx, sandboxID)
 	if err != nil {
 		log.Printf("Failed to delete sandbox: %v\n", err)
 	} else {
@@ -150,7 +150,6 @@ func main() {
 	fmt.Println("Successfully used declarative builder to create a PySpark environment!")
 	fmt.Println("All packages were pre-installed and ready to import immediately.")
 }
-
 
 // generatePySparkScript creates a PySpark analysis that can immediately import and use PySpark
 func generatePySparkScript() string {

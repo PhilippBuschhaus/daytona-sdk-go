@@ -183,8 +183,8 @@ type OrganizationsAPI interface {
 	GetOrganizationUsageOverview(ctx context.Context, organizationId string) OrganizationsAPIGetOrganizationUsageOverviewRequest
 
 	// GetOrganizationUsageOverviewExecute executes the request
-	//  @return UsageOverview
-	GetOrganizationUsageOverviewExecute(r OrganizationsAPIGetOrganizationUsageOverviewRequest) (*UsageOverview, *http.Response, error)
+	//  @return OrganizationUsageOverview
+	GetOrganizationUsageOverviewExecute(r OrganizationsAPIGetOrganizationUsageOverviewRequest) (*OrganizationUsageOverview, *http.Response, error)
 
 	/*
 		LeaveOrganization Leave organization
@@ -286,18 +286,18 @@ type OrganizationsAPI interface {
 	UnsuspendOrganizationExecute(r OrganizationsAPIUnsuspendOrganizationRequest) (*http.Response, error)
 
 	/*
-		UpdateAssignedOrganizationRoles Update assigned roles to organization member
+		UpdateAccessForOrganizationMember Update access for organization member
 
 		@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 		@param organizationId Organization ID
 		@param userId User ID
-		@return OrganizationsAPIUpdateAssignedOrganizationRolesRequest
+		@return OrganizationsAPIUpdateAccessForOrganizationMemberRequest
 	*/
-	UpdateAssignedOrganizationRoles(ctx context.Context, organizationId string, userId string) OrganizationsAPIUpdateAssignedOrganizationRolesRequest
+	UpdateAccessForOrganizationMember(ctx context.Context, organizationId string, userId string) OrganizationsAPIUpdateAccessForOrganizationMemberRequest
 
-	// UpdateAssignedOrganizationRolesExecute executes the request
+	// UpdateAccessForOrganizationMemberExecute executes the request
 	//  @return OrganizationUser
-	UpdateAssignedOrganizationRolesExecute(r OrganizationsAPIUpdateAssignedOrganizationRolesRequest) (*OrganizationUser, *http.Response, error)
+	UpdateAccessForOrganizationMemberExecute(r OrganizationsAPIUpdateAccessForOrganizationMemberRequest) (*OrganizationUser, *http.Response, error)
 
 	/*
 		UpdateOrganizationInvitation Update organization invitation
@@ -341,18 +341,16 @@ type OrganizationsAPI interface {
 	UpdateOrganizationRoleExecute(r OrganizationsAPIUpdateOrganizationRoleRequest) (*OrganizationRole, *http.Response, error)
 
 	/*
-		UpdateRoleForOrganizationMember Update role for organization member
+		UpdateSandboxDefaultLimitedNetworkEgress Update sandbox default limited network egress
 
 		@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 		@param organizationId Organization ID
-		@param userId User ID
-		@return OrganizationsAPIUpdateRoleForOrganizationMemberRequest
+		@return OrganizationsAPIUpdateSandboxDefaultLimitedNetworkEgressRequest
 	*/
-	UpdateRoleForOrganizationMember(ctx context.Context, organizationId string, userId string) OrganizationsAPIUpdateRoleForOrganizationMemberRequest
+	UpdateSandboxDefaultLimitedNetworkEgress(ctx context.Context, organizationId string) OrganizationsAPIUpdateSandboxDefaultLimitedNetworkEgressRequest
 
-	// UpdateRoleForOrganizationMemberExecute executes the request
-	//  @return OrganizationUser
-	UpdateRoleForOrganizationMemberExecute(r OrganizationsAPIUpdateRoleForOrganizationMemberRequest) (*OrganizationUser, *http.Response, error)
+	// UpdateSandboxDefaultLimitedNetworkEgressExecute executes the request
+	UpdateSandboxDefaultLimitedNetworkEgressExecute(r OrganizationsAPIUpdateSandboxDefaultLimitedNetworkEgressRequest) (*http.Response, error)
 }
 
 // OrganizationsAPIService OrganizationsAPI service
@@ -1553,7 +1551,7 @@ type OrganizationsAPIGetOrganizationUsageOverviewRequest struct {
 	organizationId string
 }
 
-func (r OrganizationsAPIGetOrganizationUsageOverviewRequest) Execute() (*UsageOverview, *http.Response, error) {
+func (r OrganizationsAPIGetOrganizationUsageOverviewRequest) Execute() (*OrganizationUsageOverview, *http.Response, error) {
 	return r.ApiService.GetOrganizationUsageOverviewExecute(r)
 }
 
@@ -1574,13 +1572,13 @@ func (a *OrganizationsAPIService) GetOrganizationUsageOverview(ctx context.Conte
 
 // Execute executes the request
 //
-//	@return UsageOverview
-func (a *OrganizationsAPIService) GetOrganizationUsageOverviewExecute(r OrganizationsAPIGetOrganizationUsageOverviewRequest) (*UsageOverview, *http.Response, error) {
+//	@return OrganizationUsageOverview
+func (a *OrganizationsAPIService) GetOrganizationUsageOverviewExecute(r OrganizationsAPIGetOrganizationUsageOverviewRequest) (*OrganizationUsageOverview, *http.Response, error) {
 	var (
 		localVarHTTPMethod  = http.MethodGet
 		localVarPostBody    interface{}
 		formFiles           []formFile
-		localVarReturnValue *UsageOverview
+		localVarReturnValue *OrganizationUsageOverview
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "OrganizationsAPIService.GetOrganizationUsageOverview")
@@ -2429,33 +2427,33 @@ func (a *OrganizationsAPIService) UnsuspendOrganizationExecute(r OrganizationsAP
 	return localVarHTTPResponse, nil
 }
 
-type OrganizationsAPIUpdateAssignedOrganizationRolesRequest struct {
-	ctx                             context.Context
-	ApiService                      OrganizationsAPI
-	organizationId                  string
-	userId                          string
-	updateAssignedOrganizationRoles *UpdateAssignedOrganizationRoles
+type OrganizationsAPIUpdateAccessForOrganizationMemberRequest struct {
+	ctx                            context.Context
+	ApiService                     OrganizationsAPI
+	organizationId                 string
+	userId                         string
+	updateOrganizationMemberAccess *UpdateOrganizationMemberAccess
 }
 
-func (r OrganizationsAPIUpdateAssignedOrganizationRolesRequest) UpdateAssignedOrganizationRoles(updateAssignedOrganizationRoles UpdateAssignedOrganizationRoles) OrganizationsAPIUpdateAssignedOrganizationRolesRequest {
-	r.updateAssignedOrganizationRoles = &updateAssignedOrganizationRoles
+func (r OrganizationsAPIUpdateAccessForOrganizationMemberRequest) UpdateOrganizationMemberAccess(updateOrganizationMemberAccess UpdateOrganizationMemberAccess) OrganizationsAPIUpdateAccessForOrganizationMemberRequest {
+	r.updateOrganizationMemberAccess = &updateOrganizationMemberAccess
 	return r
 }
 
-func (r OrganizationsAPIUpdateAssignedOrganizationRolesRequest) Execute() (*OrganizationUser, *http.Response, error) {
-	return r.ApiService.UpdateAssignedOrganizationRolesExecute(r)
+func (r OrganizationsAPIUpdateAccessForOrganizationMemberRequest) Execute() (*OrganizationUser, *http.Response, error) {
+	return r.ApiService.UpdateAccessForOrganizationMemberExecute(r)
 }
 
 /*
-UpdateAssignedOrganizationRoles Update assigned roles to organization member
+UpdateAccessForOrganizationMember Update access for organization member
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param organizationId Organization ID
 	@param userId User ID
-	@return OrganizationsAPIUpdateAssignedOrganizationRolesRequest
+	@return OrganizationsAPIUpdateAccessForOrganizationMemberRequest
 */
-func (a *OrganizationsAPIService) UpdateAssignedOrganizationRoles(ctx context.Context, organizationId string, userId string) OrganizationsAPIUpdateAssignedOrganizationRolesRequest {
-	return OrganizationsAPIUpdateAssignedOrganizationRolesRequest{
+func (a *OrganizationsAPIService) UpdateAccessForOrganizationMember(ctx context.Context, organizationId string, userId string) OrganizationsAPIUpdateAccessForOrganizationMemberRequest {
+	return OrganizationsAPIUpdateAccessForOrganizationMemberRequest{
 		ApiService:     a,
 		ctx:            ctx,
 		organizationId: organizationId,
@@ -2466,7 +2464,7 @@ func (a *OrganizationsAPIService) UpdateAssignedOrganizationRoles(ctx context.Co
 // Execute executes the request
 //
 //	@return OrganizationUser
-func (a *OrganizationsAPIService) UpdateAssignedOrganizationRolesExecute(r OrganizationsAPIUpdateAssignedOrganizationRolesRequest) (*OrganizationUser, *http.Response, error) {
+func (a *OrganizationsAPIService) UpdateAccessForOrganizationMemberExecute(r OrganizationsAPIUpdateAccessForOrganizationMemberRequest) (*OrganizationUser, *http.Response, error) {
 	var (
 		localVarHTTPMethod  = http.MethodPost
 		localVarPostBody    interface{}
@@ -2474,20 +2472,20 @@ func (a *OrganizationsAPIService) UpdateAssignedOrganizationRolesExecute(r Organ
 		localVarReturnValue *OrganizationUser
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "OrganizationsAPIService.UpdateAssignedOrganizationRoles")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "OrganizationsAPIService.UpdateAccessForOrganizationMember")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/organizations/{organizationId}/users/{userId}/assigned-roles"
+	localVarPath := localBasePath + "/organizations/{organizationId}/users/{userId}/access"
 	localVarPath = strings.Replace(localVarPath, "{"+"organizationId"+"}", url.PathEscape(parameterValueToString(r.organizationId, "organizationId")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"userId"+"}", url.PathEscape(parameterValueToString(r.userId, "userId")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
-	if r.updateAssignedOrganizationRoles == nil {
-		return localVarReturnValue, nil, reportError("updateAssignedOrganizationRoles is required and must be specified")
+	if r.updateOrganizationMemberAccess == nil {
+		return localVarReturnValue, nil, reportError("updateOrganizationMemberAccess is required and must be specified")
 	}
 
 	// to determine the Content-Type header
@@ -2508,7 +2506,7 @@ func (a *OrganizationsAPIService) UpdateAssignedOrganizationRolesExecute(r Organ
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
 	// body params
-	localVarPostBody = r.updateAssignedOrganizationRoles
+	localVarPostBody = r.updateOrganizationMemberAccess
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
 		return localVarReturnValue, nil, err
@@ -2893,65 +2891,58 @@ func (a *OrganizationsAPIService) UpdateOrganizationRoleExecute(r OrganizationsA
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
-type OrganizationsAPIUpdateRoleForOrganizationMemberRequest struct {
-	ctx                          context.Context
-	ApiService                   OrganizationsAPI
-	organizationId               string
-	userId                       string
-	updateOrganizationMemberRole *UpdateOrganizationMemberRole
+type OrganizationsAPIUpdateSandboxDefaultLimitedNetworkEgressRequest struct {
+	ctx                                            context.Context
+	ApiService                                     OrganizationsAPI
+	organizationId                                 string
+	organizationSandboxDefaultLimitedNetworkEgress *OrganizationSandboxDefaultLimitedNetworkEgress
 }
 
-func (r OrganizationsAPIUpdateRoleForOrganizationMemberRequest) UpdateOrganizationMemberRole(updateOrganizationMemberRole UpdateOrganizationMemberRole) OrganizationsAPIUpdateRoleForOrganizationMemberRequest {
-	r.updateOrganizationMemberRole = &updateOrganizationMemberRole
+func (r OrganizationsAPIUpdateSandboxDefaultLimitedNetworkEgressRequest) OrganizationSandboxDefaultLimitedNetworkEgress(organizationSandboxDefaultLimitedNetworkEgress OrganizationSandboxDefaultLimitedNetworkEgress) OrganizationsAPIUpdateSandboxDefaultLimitedNetworkEgressRequest {
+	r.organizationSandboxDefaultLimitedNetworkEgress = &organizationSandboxDefaultLimitedNetworkEgress
 	return r
 }
 
-func (r OrganizationsAPIUpdateRoleForOrganizationMemberRequest) Execute() (*OrganizationUser, *http.Response, error) {
-	return r.ApiService.UpdateRoleForOrganizationMemberExecute(r)
+func (r OrganizationsAPIUpdateSandboxDefaultLimitedNetworkEgressRequest) Execute() (*http.Response, error) {
+	return r.ApiService.UpdateSandboxDefaultLimitedNetworkEgressExecute(r)
 }
 
 /*
-UpdateRoleForOrganizationMember Update role for organization member
+UpdateSandboxDefaultLimitedNetworkEgress Update sandbox default limited network egress
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param organizationId Organization ID
-	@param userId User ID
-	@return OrganizationsAPIUpdateRoleForOrganizationMemberRequest
+	@return OrganizationsAPIUpdateSandboxDefaultLimitedNetworkEgressRequest
 */
-func (a *OrganizationsAPIService) UpdateRoleForOrganizationMember(ctx context.Context, organizationId string, userId string) OrganizationsAPIUpdateRoleForOrganizationMemberRequest {
-	return OrganizationsAPIUpdateRoleForOrganizationMemberRequest{
+func (a *OrganizationsAPIService) UpdateSandboxDefaultLimitedNetworkEgress(ctx context.Context, organizationId string) OrganizationsAPIUpdateSandboxDefaultLimitedNetworkEgressRequest {
+	return OrganizationsAPIUpdateSandboxDefaultLimitedNetworkEgressRequest{
 		ApiService:     a,
 		ctx:            ctx,
 		organizationId: organizationId,
-		userId:         userId,
 	}
 }
 
 // Execute executes the request
-//
-//	@return OrganizationUser
-func (a *OrganizationsAPIService) UpdateRoleForOrganizationMemberExecute(r OrganizationsAPIUpdateRoleForOrganizationMemberRequest) (*OrganizationUser, *http.Response, error) {
+func (a *OrganizationsAPIService) UpdateSandboxDefaultLimitedNetworkEgressExecute(r OrganizationsAPIUpdateSandboxDefaultLimitedNetworkEgressRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodPost
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *OrganizationUser
+		localVarHTTPMethod = http.MethodPost
+		localVarPostBody   interface{}
+		formFiles          []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "OrganizationsAPIService.UpdateRoleForOrganizationMember")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "OrganizationsAPIService.UpdateSandboxDefaultLimitedNetworkEgress")
 	if err != nil {
-		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
+		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/organizations/{organizationId}/users/{userId}/role"
+	localVarPath := localBasePath + "/organizations/{organizationId}/sandbox-default-limited-network-egress"
 	localVarPath = strings.Replace(localVarPath, "{"+"organizationId"+"}", url.PathEscape(parameterValueToString(r.organizationId, "organizationId")), -1)
-	localVarPath = strings.Replace(localVarPath, "{"+"userId"+"}", url.PathEscape(parameterValueToString(r.userId, "userId")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
-	if r.updateOrganizationMemberRole == nil {
-		return localVarReturnValue, nil, reportError("updateOrganizationMemberRole is required and must be specified")
+	if r.organizationSandboxDefaultLimitedNetworkEgress == nil {
+		return nil, reportError("organizationSandboxDefaultLimitedNetworkEgress is required and must be specified")
 	}
 
 	// to determine the Content-Type header
@@ -2964,7 +2955,7 @@ func (a *OrganizationsAPIService) UpdateRoleForOrganizationMemberExecute(r Organ
 	}
 
 	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{"application/json"}
+	localVarHTTPHeaderAccepts := []string{}
 
 	// set Accept header
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
@@ -2972,22 +2963,22 @@ func (a *OrganizationsAPIService) UpdateRoleForOrganizationMemberExecute(r Organ
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
 	// body params
-	localVarPostBody = r.updateOrganizationMemberRole
+	localVarPostBody = r.organizationSandboxDefaultLimitedNetworkEgress
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return localVarReturnValue, nil, err
+		return nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarReturnValue, localVarHTTPResponse, err
+		return localVarHTTPResponse, err
 	}
 
 	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarReturnValue, localVarHTTPResponse, err
+		return localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -2995,17 +2986,8 @@ func (a *OrganizationsAPIService) UpdateRoleForOrganizationMemberExecute(r Organ
 			body:  localVarBody,
 			error: localVarHTTPResponse.Status,
 		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
+		return localVarHTTPResponse, newErr
 	}
 
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHTTPResponse, nil
+	return localVarHTTPResponse, nil
 }

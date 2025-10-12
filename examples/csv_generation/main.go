@@ -25,7 +25,7 @@ func main() {
 	fmt.Println("Creating sandbox...")
 	createReq := &daytona.CreateSandboxRequest{
 		Target: daytona.StringPtr("eu"), // Required: deployment region
-		
+
 		// Optional: Add labels for organization
 		Labels: map[string]string{
 			"example": "csv_generation",
@@ -250,7 +250,7 @@ for product, qty in sorted(product_quantity.items(), key=lambda x: x[1], reverse
 
 	// Clean up - delete the sandbox
 	fmt.Println("\nCleaning up...")
-	err = client.DeleteSandbox(ctx, sandboxID, true)
+	err = client.DeleteSandbox(ctx, sandboxID)
 	if err != nil {
 		log.Printf("Failed to delete sandbox: %v\n", err)
 	} else {
